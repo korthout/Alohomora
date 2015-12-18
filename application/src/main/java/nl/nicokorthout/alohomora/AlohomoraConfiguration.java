@@ -2,56 +2,34 @@ package nl.nicokorthout.alohomora;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import org.hibernate.validator.constraints.NotEmpty;
-
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 
 import io.dropwizard.Configuration;
+import io.dropwizard.db.DataSourceFactory;
 
 /**
- * Created by nicokorthout on 06/12/15.
+ * This class allows configuration of the application.
+ * It reads the Alohomora.yml file as its configuration.
+ *
+ * @author Nico Korthout
+ * @version 0.2.0
+ * @since 06-12-2015
  */
 public class AlohomoraConfiguration extends Configuration {
 
-    @NotEmpty
-    private String mongohost;
+    @Valid
+    @NotNull
+    private DataSourceFactory database = new DataSourceFactory();
 
-    @Min(1)
-    @Max(65535)
-    private int mongoport;
-
-    @NotEmpty
-    private String mongodb;
-
-    @JsonProperty
-    public String getMongohost() {
-        return mongohost;
+    @JsonProperty("database")
+    public void setDataSourceFactory(DataSourceFactory database) {
+        this.database = database;
     }
 
-    @JsonProperty
-    public void setMongohost(String mongohost) {
-        this.mongohost = mongohost;
-    }
-
-    @JsonProperty
-    public int getMongoport() {
-        return mongoport;
-    }
-
-    @JsonProperty
-    public void setMongoport(int mongoport) {
-        this.mongoport = mongoport;
-    }
-
-    @JsonProperty
-    public String getMongodb() {
-        return mongodb;
-    }
-
-    @JsonProperty
-    public void setMongodb(String mongodb) {
-        this.mongodb = mongodb;
+    @JsonProperty("database")
+    public DataSourceFactory getDataSourceFactory() {
+        return database;
     }
 
 }

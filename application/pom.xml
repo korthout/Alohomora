@@ -23,5 +23,18 @@
         </plugins>
     </build>
 
+    <dependencies>
+        <dependency>
+          <groupId>io.dropwizard</groupId>
+          <artifactId>dropwizard-jdbi</artifactId>
+          <version>${dropwizard-version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>5.1.38</version>
+        </dependency>
+    </dependencies>
 
 </project>

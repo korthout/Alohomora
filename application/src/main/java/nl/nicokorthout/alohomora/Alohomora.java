@@ -1,19 +1,21 @@
 package nl.nicokorthout.alohomora;
 
-import com.mongodb.DB;
-import com.mongodb.Mongo;
-
-import nl.nicokorthout.alohomora.db.MongoHealthCheck;
-import nl.nicokorthout.alohomora.db.MongoManaged;
+import nl.nicokorthout.alohomora.db.UserDAO;
 import nl.nicokorthout.alohomora.resources.UserResource;
 
-import java.net.UnknownHostException;
+import org.skife.jdbi.v2.DBI;
 
 import io.dropwizard.Application;
+import io.dropwizard.jdbi.DBIFactory;
 import io.dropwizard.setup.Environment;
 
 /**
- * Created by nicokorthout on 06/12/15.
+ * This class represents the applications starting point.
+ * It sets-up the application and its resources.
+ *
+ * @author Nico Korthout
+ * @version 0.1.1
+ * @since 06-12-2015
  */
 public class Alohomora extends Application<AlohomoraConfiguration> {
 
@@ -22,18 +24,14 @@ public class Alohomora extends Application<AlohomoraConfiguration> {
     }
 
     @Override
-    public void run(AlohomoraConfiguration configuration, Environment environment)
-            throws UnknownHostException {
+    public void run(AlohomoraConfiguration config, Environment environment) {
 
-        // Setup Mongo
-        Mongo mongo = new Mongo(configuration.getMongohost(), configuration.getMongoport());
-        MongoManaged mongoManaged = new MongoManaged(mongo);
-        environment.lifecycle().manage(mongoManaged);
-        environment.healthChecks().register("mongodb", new MongoHealthCheck(mongo));
-        DB database = mongo.getDB(configuration.getMongodb());
+        final DBIFactory factory = new DBIFactory();
+        final DBI jdbi = factory.build(environment, config.getDataSourceFactory(), "mysql");
+        final UserDAO userDAO = jdbi.onDemand(UserDAO.class);
 
         // Register resources
-        environment.jersey().register(new UserResource(database));
+        environment.jersey().register(new UserResource(userDAO));
     }
 
 }
