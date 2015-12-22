@@ -1,5 +1,7 @@
 package nl.nicokorthout.alohomora.core;
 
+import com.google.common.base.Preconditions;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,11 +32,11 @@ public class User {
     }
 
     public User(UserBuilder builder) {
-        this.username = builder.username;
-        this.registered = builder.registered;
-        this.email = builder.email;
-        this.salt = builder.salt;
-        this.password = builder.password;
+        this.username = Preconditions.checkNotNull(builder.username, "username is not set");
+        this.registered = Preconditions.checkNotNull(builder.registered, "registered is not set");
+        this.email = Preconditions.checkNotNull(builder.email, "email is not set");
+        this.salt = Preconditions.checkNotNull(builder.salt, "salt is not set");
+        this.password = Preconditions.checkNotNull(builder.password, "password is not set");
     }
 
     /**

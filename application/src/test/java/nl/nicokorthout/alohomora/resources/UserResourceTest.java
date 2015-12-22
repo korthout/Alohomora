@@ -8,6 +8,7 @@ import nl.nicokorthout.alohomora.utilities.Encryption;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 import javax.ws.rs.client.Entity;
@@ -44,10 +45,10 @@ public class UserResourceTest {
     @Test
     public void registerNewUser() {
         // Make sure username does not yet exists
-        when(dao.find(eq("John Doe"))).thenReturn(Optional.empty());
+        when(dao.find(eq("johndoe"))).thenReturn(Optional.empty());
 
         // Perform request to register user
-        final NewUser newUser = new NewUser("John Doe", "mypassword123", "johndoe@example.com");
+        final NewUser newUser = new NewUser("johndoe", "mypassword123", "johndoe@example.com");
         Response response = resources.client().target("/users").request()
                 .post(Entity.entity(newUser, MediaType.APPLICATION_JSON));
 
@@ -55,7 +56,7 @@ public class UserResourceTest {
         assertThat(response.getStatus()).isEqualTo(Response.Status.CREATED.getStatusCode());
 
         // Check username in response
-        assertThat(response.readEntity(String.class)).isEqualTo("{\"username\":\"John Doe\"}");
+        assertThat(response.readEntity(String.class)).isEqualTo("{\"username\":\"johndoe\"}");
 
         // Check location header in response
         assertThat(response.getLocation().toString())
@@ -84,11 +85,9 @@ public class UserResourceTest {
 
     @Test
     public void registerValuesNull() {
-        final NewUser newUser = new NewUser(null, null, null);
-
         // Perform request to register null user
         Response response = resources.client().target("/users").request()
-                .post(Entity.entity(newUser, MediaType.APPLICATION_JSON));
+                .post(Entity.entity("{}", MediaType.APPLICATION_JSON));
 
         // Check response is 422 Unprocessable Entity
         assertThat(response.getStatus()).isEqualTo(422);
@@ -144,15 +143,38 @@ public class UserResourceTest {
     }
 
     @Test
+    public void registerUsernameWhitespaced() {
+        final NewUser newUser = new NewUser("John Doe", "mypassword123", "johndoe@example.com");
+
+        // Perform request to register null user
+        Response response = resources.client().target("/users").request()
+                .post(Entity.entity(newUser, MediaType.APPLICATION_JSON));
+
+        // Check response is 422 Unprocessable Entity
+        assertThat(response.getStatus()).isEqualTo(422);
+
+        // Check errors are correct and human readable
+        ValidationErrorMessage message = response.readEntity(ValidationErrorMessage.class);
+        assertThat(message.getErrors()).containsOnly("username may not contain any whitespaces");
+
+        // Check changes in database
+        verify(dao, times(0)).store(isA(User.class));
+    }
+
+    @Test
     public void registerConflict() {
         // Make sure username does already exists
         User user = User.builder()
-                .username("John Doe")
+                .username("johndoe")
+                .registered(LocalDate.now())
+                .email("johndoe@example.com")
+                .salt("salt".getBytes())
+                .password("password".getBytes())
                 .build();
-        when(dao.find(eq("John Doe"))).thenReturn(Optional.of(user));
+        when(dao.find(eq("johndoe"))).thenReturn(Optional.of(user));
 
         // Perform request to register null user
-        final NewUser newUser = new NewUser("John Doe", "mypassword123", "johndoe@example.com");
+        final NewUser newUser = new NewUser("johndoe", "mypassword123", "johndoe@example.com");
         Response response = resources.client().target("/users").request()
                 .post(Entity.entity(newUser, MediaType.APPLICATION_JSON));
 

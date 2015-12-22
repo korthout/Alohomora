@@ -1,7 +1,11 @@
 package nl.nicokorthout.alohomora.api;
 
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Preconditions;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -9,8 +13,8 @@ import javax.validation.constraints.Size;
 import io.dropwizard.validation.ValidationMethod;
 
 /**
- * Representation of a new User for the system. Contains everything that is necessary for creating
- * a new User.
+ * Representation of a new User for the system. Contains everything that is necessary for creating a
+ * new User.
  *
  * @author Nico Korthout
  * @version 0.1.0
@@ -30,26 +34,38 @@ public class NewUser {
     @Size(min = 1, max = 254)
     private String email;
 
+    /**
+     * Construct a new user.
+     *
+     * @param username The username for the new user.
+     * @param password The password for the new user.
+     * @param email    The email address belonging to the new user.
+     */
     @JsonCreator
-    public NewUser() {
-    }
-
-    public NewUser(String username, String password, String email) {
+    public NewUser(@JsonProperty(value = "username") String username,
+                   @JsonProperty(value = "password") String password,
+                   @JsonProperty(value = "email") String email) {
         this.username = username;
         this.password = password;
         this.email = email;
     }
 
-    @ValidationMethod(message="name may not be admin")
+    @ValidationMethod(message = "name may not be admin")
     @JsonIgnore
     public boolean isNotAdmin() {
         return !"admin".equalsIgnoreCase(username);
     }
 
-    @ValidationMethod(message="name may not be me")
+    @ValidationMethod(message = "name may not be me")
     @JsonIgnore
     public boolean isNotMe() {
         return !"me".equalsIgnoreCase(username);
+    }
+
+    @ValidationMethod(message = "username may not contain any whitespaces")
+    @JsonIgnore
+    public boolean isUsernameNotWhitespaced() {
+        return username != null ? !CharMatcher.WHITESPACE.matchesAnyOf(username) : true;
     }
 
     public String getUsername() {
