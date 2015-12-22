@@ -9,8 +9,8 @@ import io.dropwizard.Configuration;
 import io.dropwizard.db.DataSourceFactory;
 
 /**
- * This class allows configuration of the application.
- * It reads the Alohomora.yml file as its configuration.
+ * This class allows configuration of the application. It reads the Alohomora.yml file as its
+ * configuration.
  *
  * @author Nico Korthout
  * @version 0.2.0
