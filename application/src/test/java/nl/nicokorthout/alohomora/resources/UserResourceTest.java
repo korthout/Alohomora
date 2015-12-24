@@ -42,6 +42,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,7 +51,7 @@ import static org.mockito.Mockito.when;
  * Unit tests for the User resource.
  *
  * @author Nico Korthout
- * @version 0.2.0
+ * @version 0.3.0
  * @since 22-12-2015
  */
 public class UserResourceTest {
@@ -74,6 +75,11 @@ public class UserResourceTest {
             .addProvider(new AuthValueFactoryProvider.Binder<>(User.class))
             .addResource(new UserResource(dao, new Encryption(), jsonWebTokenSecret))
             .build();
+
+    @Before
+    public void setup() {
+        reset(dao);
+    }
 
     @Test
     public void registerNewUser() {
@@ -176,25 +182,6 @@ public class UserResourceTest {
     }
 
     @Test
-    public void registerUsernameWhitespaced() {
-        final NewUser newUser = new NewUser("John Doe", "mypassword123", "johndoe@example.com");
-
-        // Perform request to register null user
-        Response response = resources.getJerseyTest().target("/users").request()
-                .post(Entity.entity(newUser, MediaType.APPLICATION_JSON));
-
-        // Check response is 422 Unprocessable Entity
-        assertThat(response.getStatus()).isEqualTo(422);
-
-        // Check errors are correct and human readable
-        ValidationErrorMessage message = response.readEntity(ValidationErrorMessage.class);
-        assertThat(message.getErrors()).containsOnly("username may not contain any whitespaces");
-
-        // Check changes in database
-        verify(dao, times(0)).store(isA(User.class));
-    }
-
-    @Test
     public void registerConflict() {
         // Make sure username does already exists
         User user = User.builder()
@@ -234,7 +221,7 @@ public class UserResourceTest {
 
         // Check errors are correct and human readable
         ValidationErrorMessage message = response.readEntity(ValidationErrorMessage.class);
-        assertThat(message.getErrors()).containsOnly("name may not be admin");
+        assertThat(message.getErrors()).containsOnly("username may not be admin");
 
         // Check changes in database
         verify(dao, times(0)).store(isA(User.class));
@@ -253,7 +240,26 @@ public class UserResourceTest {
 
         // Check errors are correct and human readable
         ValidationErrorMessage message = response.readEntity(ValidationErrorMessage.class);
-        assertThat(message.getErrors()).containsOnly("name may not be me");
+        assertThat(message.getErrors()).containsOnly("username may not be me");
+
+        // Check changes in database
+        verify(dao, times(0)).store(isA(User.class));
+    }
+
+    @Test
+    public void registerNonAlphanumeric() {
+        final NewUser newUser = new NewUser("iam!@#$%^", "mypassword123", "johndoe@example.com");
+
+        // Perform request to register null user
+        Response response = resources.getJerseyTest().target("/users").request()
+                .post(Entity.entity(newUser, MediaType.APPLICATION_JSON));
+
+        // Check response is 422 Unprocessable Entity
+        assertThat(response.getStatus()).isEqualTo(422);
+
+        // Check errors are correct and human readable
+        ValidationErrorMessage message = response.readEntity(ValidationErrorMessage.class);
+        assertThat(message.getErrors()).containsOnly("username must be alphanumeric");
 
         // Check changes in database
         verify(dao, times(0)).store(isA(User.class));
@@ -299,6 +305,8 @@ public class UserResourceTest {
     public void loginUnknownUser() {
         // Encode the user's credentials using Base64
         String authorization = "Basic " + Base64.encodeAsString("johndoe:mypassword123");
+
+        when(dao.find(any(String.class))).thenReturn(Optional.empty());
 
         // Perform request to register null user
         Response response = resources.getJerseyTest().target("/users/me/token").request()
@@ -481,6 +489,43 @@ public class UserResourceTest {
 
         // Check no cookie was set
         assertThat(response.getCookies()).isEmpty();
+    }
+
+    @Test
+    public void loginByEmail() {
+        final String username = "johndoe";
+        final String password = "mypassword123";
+        final byte[] salt = "somesalt".getBytes();
+        final byte[] hashedPassword = new Encryption().hashPassword(password, salt);
+        final String email = "johndoe@example.com";
+
+        User user = User.builder()
+                .username(username)
+                .registered(LocalDate.now())
+                .email(email)
+                .salt(salt)
+                .password(hashedPassword)
+                .build();
+
+        // Make sure one user exists
+        when(dao.findByEmail(email)).thenReturn(Optional.of(user));
+
+        // Encode the user's credentials using Base64
+        String authorization = "Basic " + Base64.encodeAsString(email + ":" + password);
+
+        // Perform request to register null user
+        Response response = resources.getJerseyTest().target("/users/me/token").request()
+                .header(HttpHeaders.AUTHORIZATION, authorization)
+                .get();
+
+        // Check response code
+        assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
+
+        // Check token cookie in the response
+        Map<String, NewCookie> cookies = response.getCookies();
+        NewCookie token = cookies.get("jwt");
+        assertThat(token.getValue()).isNotEmpty();
+        assertThat(token.isHttpOnly()).isTrue();
     }
 
     @Test

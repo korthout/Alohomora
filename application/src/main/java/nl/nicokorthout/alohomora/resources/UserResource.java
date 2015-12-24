@@ -12,6 +12,7 @@ import nl.nicokorthout.alohomora.core.User;
 import nl.nicokorthout.alohomora.db.UserDAO;
 import nl.nicokorthout.alohomora.utilities.Encryption;
 
+import org.apache.commons.validator.routines.EmailValidator;
 import org.glassfish.jersey.internal.util.Base64;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.joda.time.DateTime;
@@ -46,7 +47,7 @@ import io.dropwizard.auth.Auth;
  * The user resource provides access to user functions for clients.
  *
  * @author Nico Korthout
- * @version 0.3.0
+ * @version 0.3.1
  * @since 06-12-2015
  */
 @Path("/users")
@@ -127,14 +128,20 @@ public class UserResource {
             final String credentials = new String(
                     Base64.decode(base64EncodedCredentials.getBytes()), Charset.forName("UTF-8"));
 
-            // Credentials = username:password
+            // Credentials = identifier:password (where identifier = username or email)
             final String[] values = credentials.split(":", 2);
             if (values.length == 2) {
-                final String username = values[0];
+                final String identifier = values[0];
                 final String password = values[1];
 
-                // Get existing User from Database using username
-                final Optional<User> existingUser = userDAO.find(username);
+                // Get existing User from Database using identifier or email
+                Optional<User> existingUser;
+                if (EmailValidator.getInstance().isValid(identifier)) {
+                    existingUser = userDAO.findByEmail(identifier);
+                } else {
+                    existingUser = userDAO.find(identifier);
+                }
+
                 if (existingUser.isPresent()) {
 
                     // hash Password of User
@@ -148,7 +155,7 @@ public class UserResource {
                         final JsonWebToken jsonWebToken = JsonWebToken.builder()
                                 .header(JsonWebTokenHeader.HS512())
                                 .claim(JsonWebTokenClaim.builder()
-                                        .subject(username)
+                                        .subject(existingUser.get().getUsername())
                                         .issuedAt(DateTime.now())
                                         .build())
                                 .build();
@@ -165,7 +172,7 @@ public class UserResource {
                         // Respond with the jsonWebToken
                         return Response.ok()
                                 .cookie(cookie)
-                                .entity("logged in user " + username)
+                                .entity("logged in user " + existingUser.get().getUsername())
                                 .build();
                     }
                 }

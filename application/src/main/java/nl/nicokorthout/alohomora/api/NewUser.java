@@ -1,7 +1,5 @@
 package nl.nicokorthout.alohomora.api;
 
-import com.google.common.base.CharMatcher;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -16,7 +14,7 @@ import io.dropwizard.validation.ValidationMethod;
  * new User.
  *
  * @author Nico Korthout
- * @version 0.1.0
+ * @version 0.2.0
  * @since 19-12-2015
  */
 public class NewUser {
@@ -49,22 +47,23 @@ public class NewUser {
         this.email = email;
     }
 
-    @ValidationMethod(message = "name may not be admin")
+    @ValidationMethod(message = "username may not be admin")
     @JsonIgnore
     public boolean isNotAdmin() {
         return !"admin".equalsIgnoreCase(username);
     }
 
-    @ValidationMethod(message = "name may not be me")
+    @ValidationMethod(message = "username may not be me")
     @JsonIgnore
     public boolean isNotMe() {
         return !"me".equalsIgnoreCase(username);
     }
 
-    @ValidationMethod(message = "username may not contain any whitespaces")
+    @ValidationMethod(message = "username must be alphanumeric")
     @JsonIgnore
-    public boolean isUsernameNotWhitespaced() {
-        return username != null ? !CharMatcher.WHITESPACE.matchesAnyOf(username) : true;
+    public boolean isUsernameAlphanumeric() {
+        return  username != null
+                ? username.chars().allMatch(x -> Character.isLetterOrDigit(x)) : true;
     }
 
     public String getUsername() {

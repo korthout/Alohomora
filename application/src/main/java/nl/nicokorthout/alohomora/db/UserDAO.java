@@ -18,7 +18,7 @@ import java.util.Optional;
  * This interface is used to access the database's User table.
  *
  * @author Nico Korthout
- * @version 0.2.0
+ * @version 0.3.0
  * @since 18-12-2015
  */
 @RegisterMapper(UserMapper.class)
@@ -33,7 +33,8 @@ public interface UserDAO {
             "registered date not null, " +
             "email varchar(254) not null, " +
             "salt binary(8) not null, " +
-            "password binary(64) not null)")
+            "password binary(64) not null, " +
+            "unique (email))")
     void createUserTable();
 
     /**
@@ -56,4 +57,14 @@ public interface UserDAO {
             "where username = :username")
     Optional<User> find(@Bind("username") String username);
 
+    /**
+     * Find a User by its email.
+     *
+     * @param email The email to find the user by
+     * @return An Optional containing the found user, or an empty Optional if not.
+     */
+    @SingleValueResult
+    @SqlQuery("select username, registered, email, salt, password from user " +
+            "where email = :email")
+    Optional<User> findByEmail(@Bind("email") String email);
 }
