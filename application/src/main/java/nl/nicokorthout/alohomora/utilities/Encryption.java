@@ -14,7 +14,7 @@ import javax.validation.constraints.NotNull;
  * The Encryption class is a utility to encrypt Strings (e.g. passwords).
  *
  * @author Nico Korthout
- * @version 0.1.0
+ * @version 0.1.1
  * @since 18-12-2015
  */
 public class Encryption {
@@ -40,7 +40,7 @@ public class Encryption {
             secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512");
             secureRandom = SecureRandom.getInstance("SHA1PRNG");
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -71,28 +71,28 @@ public class Encryption {
         try {
             return secretKeyFactory.generateSecret(spec).getEncoded();
         } catch (InvalidKeySpecException e) {
-            throw new IllegalStateException(e);
+            throw new RuntimeException(e);
         }
     }
 
-//    /**
-//     * The byte[] returned by MessageDigest does not have a nice textual representation, so some
-//     * form of encoding is usually performed. <p> This implementation follows the example of David
-//     * Flanagan's book "Java In A Nutshell", and converts a byte array into a String of hex
-//     * characters. It has been slightly modified to comply modern standards. </p>
-//     *
-//     * @param input bytes to encode.
-//     * @return String containing encoded bytes.
-//     */
-//    public String hexEncode(@NotNull byte[] input) {
-//        Preconditions.checkNotNull(input, "input required");
-//        StringBuilder result = new StringBuilder();
-//        char[] digits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-//        for (byte b : input) {
-//            result.append(digits[(b & 0xf0) >> 4]);
-//            result.append(digits[b & 0x0f]);
-//        }
-//        return result.toString();
-//    }
+    /**
+     * The byte[] returned by MessageDigest does not have a nice textual representation, so some
+     * form of encoding is usually performed. <p> This implementation follows the example of David
+     * Flanagan's book "Java In A Nutshell", and converts a byte array into a String of hex
+     * characters. It has been slightly modified to comply modern standards. </p>
+     *
+     * @param input bytes to encode.
+     * @return String containing encoded bytes.
+     */
+    public String hexEncode(@NotNull byte[] input) {
+        Preconditions.checkNotNull(input, "input required");
+        StringBuilder result = new StringBuilder();
+        char[] digits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+        for (byte b : input) {
+            result.append(digits[(b & 0xf0) >> 4]);
+            result.append(digits[b & 0x0f]);
+        }
+        return result.toString();
+    }
 
 }

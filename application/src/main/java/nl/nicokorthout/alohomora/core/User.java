@@ -5,20 +5,35 @@ import com.google.common.base.Preconditions;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 
+
+import java.security.Principal;
 import java.time.LocalDate;
+import java.util.Arrays;
+
+import javax.validation.constraints.NotNull;
 
 /**
  * A User represents a person using the system.
  *
  * @author Nico Korthout
- * @version 0.1.0
+ * @version 0.2.0
  * @since 18-12-2015
  */
-public class User {
+@JsonDeserialize(builder = User.UserBuilder.class)
+public class User implements Principal {
 
     private final String username;
+
+    @JsonDeserialize(using = LocalDateDeserializer.class)
+    @JsonSerialize(using = LocalDateSerializer.class)
     private final LocalDate registered;
+
     private final String email;
 
     @JsonIgnore
@@ -35,8 +50,8 @@ public class User {
         this.username = Preconditions.checkNotNull(builder.username, "username is not set");
         this.registered = Preconditions.checkNotNull(builder.registered, "registered is not set");
         this.email = Preconditions.checkNotNull(builder.email, "email is not set");
-        this.salt = Preconditions.checkNotNull(builder.salt, "salt is not set");
-        this.password = Preconditions.checkNotNull(builder.password, "password is not set");
+        this.salt = builder.salt;
+        this.password = builder.password;
     }
 
     /**
@@ -75,6 +90,12 @@ public class User {
         return password;
     }
 
+    @JsonIgnore
+    @Override
+    public String getName() {
+        return username;
+    }
+
     @Override
     public String toString() {
         try {
@@ -84,11 +105,46 @@ public class User {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        User user = (User) o;
+
+        if (username != null ? !username.equals(user.username) : user.username != null)
+            return false;
+        if (registered != null ? !registered.equals(user.registered) : user.registered != null)
+            return false;
+        if (email != null ? !email.equals(user.email) : user.email != null) return false;
+        if (!Arrays.equals(salt, user.salt)) return false;
+        return Arrays.equals(password, user.password);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = username != null ? username.hashCode() : 0;
+        result = 31 * result + (registered != null ? registered.hashCode() : 0);
+        result = 31 * result + (email != null ? email.hashCode() : 0);
+        result = 31 * result + Arrays.hashCode(salt);
+        result = 31 * result + Arrays.hashCode(password);
+        return result;
+    }
+
+    @JsonPOJOBuilder(buildMethodName = "build", withPrefix = "")
     public static class UserBuilder {
 
+        @NotNull
         private String username;
+
+        @NotNull
+        @JsonDeserialize(using = LocalDateDeserializer.class)
+        @JsonSerialize(using = LocalDateSerializer.class)
         private LocalDate registered;
+
+        @NotNull
         private String email;
+
         private byte[] salt;
         private byte[] password;
 

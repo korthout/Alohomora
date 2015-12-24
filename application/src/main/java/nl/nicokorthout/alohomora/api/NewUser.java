@@ -1,7 +1,6 @@
 package nl.nicokorthout.alohomora.api;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Preconditions;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;

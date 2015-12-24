@@ -2,6 +2,10 @@ package nl.nicokorthout.alohomora;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.hibernate.validator.constraints.NotEmpty;
+
+import java.io.UnsupportedEncodingException;
+
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
@@ -13,7 +17,7 @@ import io.dropwizard.db.DataSourceFactory;
  * configuration.
  *
  * @author Nico Korthout
- * @version 0.2.0
+ * @version 0.3.0
  * @since 06-12-2015
  */
 public class AlohomoraConfiguration extends Configuration {
@@ -21,6 +25,9 @@ public class AlohomoraConfiguration extends Configuration {
     @Valid
     @NotNull
     private DataSourceFactory database = new DataSourceFactory();
+
+    @NotEmpty
+    private String jsonWebTokenSecret;
 
     @JsonProperty("database")
     public void setDataSourceFactory(DataSourceFactory database) {
@@ -32,4 +39,17 @@ public class AlohomoraConfiguration extends Configuration {
         return database;
     }
 
+    @JsonProperty("jsonWebTokenSecret")
+    public byte[] getJsonWebTokenSecret() {
+        try {
+            return jsonWebTokenSecret.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("Could not retrieve JSON Web Token from config", e);
+        }
+    }
+
+    @JsonProperty("jsonWebTokenSecret")
+    public void setJsonWebTokenSecret(String jsonWebTokenSecret) {
+        this.jsonWebTokenSecret = jsonWebTokenSecret;
+    }
 }
