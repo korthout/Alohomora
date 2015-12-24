@@ -27,10 +27,12 @@ import java.util.Optional;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
@@ -47,7 +49,7 @@ import io.dropwizard.auth.Auth;
  * The user resource provides access to user functions for clients.
  *
  * @author Nico Korthout
- * @version 0.3.1
+ * @version 0.4.0
  * @since 06-12-2015
  */
 @Path("/users")
@@ -85,7 +87,11 @@ public class UserResource {
     public Response register(@Valid NewUser newUser, @Context UriInfo uriInfo) {
         // Check username available
         if (userDAO.find(newUser.getUsername()).isPresent()) {
-            return Response.status(Response.Status.CONFLICT).entity("username unavailable").build();
+            return Response.status(Response.Status.CONFLICT).entity("username already in use").build();
+        }
+        // Check email available
+        if (userDAO.findByEmail(newUser.getEmail()).isPresent()) {
+            return Response.status(Response.Status.CONFLICT).entity("email already in use").build();
         }
 
         // Hash Password
@@ -203,6 +209,23 @@ public class UserResource {
     @Produces(MediaType.APPLICATION_JSON)
     public User getMe(@Auth User user) {
         return user;
+    }
+
+    /**
+     * Change the password of the logged in user.
+     *
+     * @param user The logged in user (provided by Dropwizard's auth).
+     * @return 200 OK if updated correctly.
+     */
+    @Path("me/password")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response changePassword(@Auth User user, @NotNull @Size(min = 3) String password) {
+        final byte[] salt = encryption.generateSalt();
+        final byte[] hashedPassword = encryption.hashPassword(password, salt);
+        userDAO.update(user.asBuilder().password(hashedPassword).salt(salt).build());
+        return Response.ok().build();
     }
 
 }

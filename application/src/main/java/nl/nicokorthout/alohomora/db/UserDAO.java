@@ -18,7 +18,7 @@ import java.util.Optional;
  * This interface is used to access the database's User table.
  *
  * @author Nico Korthout
- * @version 0.3.0
+ * @version 0.4.0
  * @since 18-12-2015
  */
 @RegisterMapper(UserMapper.class)
@@ -67,4 +67,13 @@ public interface UserDAO {
     @SqlQuery("select username, registered, email, salt, password from user " +
             "where email = :email")
     Optional<User> findByEmail(@Bind("email") String email);
+
+    /**
+     * Update a user's information in the database.
+     *
+     * @param user The user with its updated information.
+     */
+    @SqlUpdate("update user set email = :email, salt = :salt, password = :password " +
+            "where username = :username")
+    void update(@BindBean User user);
 }

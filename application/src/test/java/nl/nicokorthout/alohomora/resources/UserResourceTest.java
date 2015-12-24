@@ -51,7 +51,7 @@ import static org.mockito.Mockito.when;
  * Unit tests for the User resource.
  *
  * @author Nico Korthout
- * @version 0.3.0
+ * @version 0.4.0
  * @since 22-12-2015
  */
 public class UserResourceTest {
@@ -85,6 +85,7 @@ public class UserResourceTest {
     public void registerNewUser() {
         // Make sure username does not yet exists
         when(dao.find(eq("johndoe"))).thenReturn(Optional.empty());
+        when(dao.findByEmail(eq("johndoe@example.com"))).thenReturn(Optional.empty());
 
         // Perform request to register user
         final NewUser newUser = new NewUser("johndoe", "mypassword123", "johndoe@example.com");
@@ -182,7 +183,7 @@ public class UserResourceTest {
     }
 
     @Test
-    public void registerConflict() {
+    public void registerConflictUsername() {
         // Make sure username does already exists
         User user = User.builder()
                 .username("johndoe")
@@ -202,7 +203,37 @@ public class UserResourceTest {
         assertThat(response.getStatus()).isEqualTo(Response.Status.CONFLICT.getStatusCode());
 
         // Check errors are correct and human readable
-        assertThat(response.readEntity(String.class)).isEqualTo("username unavailable");
+        assertThat(response.readEntity(String.class)).isEqualTo("username already in use");
+
+        // Check changes in database
+        verify(dao, times(0)).store(isA(User.class));
+    }
+
+    @Test
+    public void registerConflictEmail() {
+        final String email = "johndoe@example.com";
+
+        // Make sure username does already exists
+        User user = User.builder()
+                .username("johndoe")
+                .registered(LocalDate.now())
+                .email(email)
+                .salt("salt".getBytes())
+                .password("password".getBytes())
+                .build();
+        when(dao.find(eq("notjohndoe"))).thenReturn(Optional.empty());
+        when(dao.findByEmail(eq(email))).thenReturn(Optional.of(user));
+
+        // Perform request to register null user
+        final NewUser newUser = new NewUser("notjohndoe", "mypassword123", email);
+        Response response = resources.getJerseyTest().target("/users").request()
+                .post(Entity.entity(newUser, MediaType.APPLICATION_JSON));
+
+        // Check response is 409 Conflict
+        assertThat(response.getStatus()).isEqualTo(Response.Status.CONFLICT.getStatusCode());
+
+        // Check errors are correct and human readable
+        assertThat(response.readEntity(String.class)).isEqualTo("email already in use");
 
         // Check changes in database
         verify(dao, times(0)).store(isA(User.class));
@@ -603,6 +634,98 @@ public class UserResourceTest {
         // Check error is correct and human readable
         assertThat(response.readEntity(String.class))
                 .isEqualTo("Credentials are required to access this resource.");
+    }
+
+    @Test
+    public void changePassword() {
+        // Make sure one user exists
+        final String username = "johndoe";
+        User user = User.builder()
+                .username(username)
+                .registered(LocalDate.now())
+                .email("johndoe@example.com")
+                .build();
+        when(dao.find(username)).thenReturn(Optional.of(user));
+
+        // Make sure user can be found
+        final HmacSHA512Signer signer = new HmacSHA512Signer(jsonWebTokenSecret);
+        final JsonWebToken jsonWebToken = JsonWebToken.builder()
+                .header(JsonWebTokenHeader.HS512())
+                .claim(JsonWebTokenClaim.builder()
+                        .subject(username)
+                        .issuedAt(DateTime.now())
+                        .build())
+                .build();
+        final String signedToken = signer.sign(jsonWebToken);
+
+        final String password = "newpassword";
+
+        // Perform request to register null user
+        Response response = resources.getJerseyTest().target("/users/me/password").request()
+                .cookie("jwt", signedToken)
+                .put(Entity.entity(password, MediaType.APPLICATION_JSON));
+
+        // Check response code
+        assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
+
+        // Make sure user is updated in the database
+        verify(dao, times(1)).update(any(User.class));
+    }
+
+    @Test
+    public void changePasswordUnauthorized() {
+        final String password = "newpassword";
+
+        // Perform request to register null user
+        Response response = resources.getJerseyTest().target("/users/me/password").request()
+                .put(Entity.entity(password, MediaType.APPLICATION_JSON));
+
+        // Check response code
+        assertThat(response.getStatus()).isEqualTo(Response.Status.UNAUTHORIZED.getStatusCode());
+
+        // Make sure user is updated in the database
+        verify(dao, times(0)).update(any(User.class));
+    }
+
+    @Test
+    public void changePasswordTooShort() {
+        // Make sure one user exists
+        final String username = "johndoe";
+        User user = User.builder()
+                .username(username)
+                .registered(LocalDate.now())
+                .email("johndoe@example.com")
+                .build();
+        when(dao.find(username)).thenReturn(Optional.of(user));
+
+        // Make sure user can be found
+        final HmacSHA512Signer signer = new HmacSHA512Signer(jsonWebTokenSecret);
+        final JsonWebToken jsonWebToken = JsonWebToken.builder()
+                .header(JsonWebTokenHeader.HS512())
+                .claim(JsonWebTokenClaim.builder()
+                        .subject(username)
+                        .issuedAt(DateTime.now())
+                        .build())
+                .build();
+        final String signedToken = signer.sign(jsonWebToken);
+
+        final String password = "aa";
+
+        // Perform request to register null user
+        Response response = resources.getJerseyTest().target("/users/me/password").request()
+                .cookie("jwt", signedToken)
+                .put(Entity.entity(password, MediaType.APPLICATION_JSON));
+
+        // Check response code
+        assertThat(response.getStatus()).isEqualTo(Response.Status.BAD_REQUEST.getStatusCode());
+
+        // Check errors are correct and human readable
+        ValidationErrorMessage message = response.readEntity(ValidationErrorMessage.class);
+        assertThat(message.getErrors())
+                .containsOnly("changePassword.arg1 size must be between 3 and 2147483647");
+
+        // Make sure user is updated in the database
+        verify(dao, times(0)).update(any(User.class));
     }
 
 }
