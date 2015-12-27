@@ -49,7 +49,7 @@ import io.dropwizard.auth.Auth;
  * The user resource provides access to user functions for clients.
  *
  * @author Nico Korthout
- * @version 0.4.0
+ * @version 0.4.1
  * @since 06-12-2015
  */
 @Path("/users")
@@ -104,6 +104,7 @@ public class UserResource {
                 .email(newUser.getEmail())
                 .salt(salt)
                 .password(hashedPassword)
+                .role(newUser.getRole())
                 .build();
 
         // Register user
@@ -215,6 +216,7 @@ public class UserResource {
      * Change the password of the logged in user.
      *
      * @param user The logged in user (provided by Dropwizard's auth).
+     * @param password The new (unhashed) password for the user.
      * @return 200 OK if updated correctly.
      */
     @Path("me/password")

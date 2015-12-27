@@ -1,7 +1,6 @@
 package nl.nicokorthout.alohomora.api;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
+import nl.nicokorthout.alohomora.core.Role;
 
 import org.junit.Test;
 
@@ -15,27 +14,25 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Does not include validation checking, which is tested in UserResourceTest.
  *
  * @author Nico Korthout
- * @version 0.1.0
+ * @version 0.1.1
  * @since 22-12-2015
  */
 public class NewUserTest {
 
     @Test
     public void serializeToJSON() throws Exception {
-        final NewUser newUser = new NewUser("John Doe", "mypassword123", "johndoe@example.com");
-        final ObjectWriter writer = Jackson.newObjectMapper().writerWithDefaultPrettyPrinter();
-
-        assertThat(writer.writeValueAsString(newUser)).isEqualTo(fixture("fixtures/newuser.json"));
+        assertThat(Jackson.newObjectMapper().writerWithDefaultPrettyPrinter()
+                .writeValueAsString(new NewUser("JohnDoe", "mypassword123", "johndoe@example.com",
+                        Role.CUSTOMER.toString()))).isEqualTo(fixture("fixtures/newuser.json"));
     }
 
 
     @Test
     public void deserializeFromJSON() throws Exception {
-        final NewUser newUser = new NewUser("John Doe", "mypassword123", "johndoe@example.com");
-        final ObjectMapper mapper = Jackson.newObjectMapper();
-
-        assertThat(mapper.readValue(fixture("fixtures/newuser.json"), NewUser.class))
-                .isEqualTo(newUser);
+        assertThat(Jackson.newObjectMapper()
+                .readValue(fixture("fixtures/newuser.json"), NewUser.class))
+                .isEqualTo(new NewUser("JohnDoe", "mypassword123", "johndoe@example.com",
+                        Role.CUSTOMER.toString()));
     }
 
 }

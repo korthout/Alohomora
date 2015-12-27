@@ -22,7 +22,7 @@ import javax.validation.constraints.NotNull;
  * A User represents a person using the system.
  *
  * @author Nico Korthout
- * @version 0.2.0
+ * @version 0.3.0
  * @since 18-12-2015
  */
 @JsonDeserialize(builder = User.UserBuilder.class)
@@ -42,6 +42,8 @@ public class User implements Principal {
     @JsonIgnore
     private final byte[] password;
 
+    private final String role;
+
     public static UserBuilder builder() {
         return new UserBuilder();
     }
@@ -52,6 +54,7 @@ public class User implements Principal {
         this.email = Preconditions.checkNotNull(builder.email, "email is not set");
         this.salt = builder.salt;
         this.password = builder.password;
+        this.role = Preconditions.checkNotNull(builder.role, "role is not set");
     }
 
     /**
@@ -67,7 +70,8 @@ public class User implements Principal {
                 .registered(registered)
                 .email(email)
                 .salt(salt)
-                .password(password);
+                .password(password)
+                .role(role);
     }
 
     public String getUsername() {
@@ -88,6 +92,10 @@ public class User implements Principal {
 
     public byte[] getPassword() {
         return password;
+    }
+
+    public String getRole() {
+        return role;
     }
 
     @JsonIgnore
@@ -118,7 +126,8 @@ public class User implements Principal {
             return false;
         if (email != null ? !email.equals(user.email) : user.email != null) return false;
         if (!Arrays.equals(salt, user.salt)) return false;
-        return Arrays.equals(password, user.password);
+        if (!Arrays.equals(password, user.password)) return false;
+        return role != null ? role.equals(user.role) : user.role == null;
     }
 
     @Override
@@ -128,6 +137,7 @@ public class User implements Principal {
         result = 31 * result + (email != null ? email.hashCode() : 0);
         result = 31 * result + Arrays.hashCode(salt);
         result = 31 * result + Arrays.hashCode(password);
+        result = 31 * result + (role != null ? role.hashCode() : 0);
         return result;
     }
 
@@ -148,12 +158,16 @@ public class User implements Principal {
         private byte[] salt;
         private byte[] password;
 
+        @NotNull
+        private String role;
+
         public UserBuilder() {
             this.username = null;
             this.registered = null;
             this.email = null;
             this.salt = null;
             this.password = null;
+            this.role = null;
         }
 
         public UserBuilder username(String username) {
@@ -178,6 +192,11 @@ public class User implements Principal {
 
         public UserBuilder password(byte[] password) {
             this.password = password;
+            return this;
+        }
+
+        public UserBuilder role(String role) {
+            this.role = role;
             return this;
         }
 

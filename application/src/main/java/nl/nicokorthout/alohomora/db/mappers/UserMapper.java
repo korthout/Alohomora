@@ -12,7 +12,7 @@ import java.sql.SQLException;
  * Maps ResultSets from queries to Users.
  *
  * @author Nico Korthout
- * @version 0.1.0
+ * @version 0.1.1
  * @since 18-12-2015
  */
 public class UserMapper implements ResultSetMapper<User> {
@@ -26,6 +26,7 @@ public class UserMapper implements ResultSetMapper<User> {
                 .email(resultSet.getString("email"))
                 .salt(resultSet.getBytes("salt"))
                 .password(resultSet.getBytes("password"))
+                .role(resultSet.getString("role"))
                 .build();
     }
 

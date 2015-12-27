@@ -10,6 +10,8 @@ import com.github.toastshaman.dropwizard.auth.jwt.parser.DefaultJsonWebTokenPars
 
 import nl.nicokorthout.alohomora.api.NewUser;
 import nl.nicokorthout.alohomora.auth.JWTAuthenticator;
+import nl.nicokorthout.alohomora.auth.RoleAuthorizer;
+import nl.nicokorthout.alohomora.core.Role;
 import nl.nicokorthout.alohomora.core.User;
 import nl.nicokorthout.alohomora.db.UserDAO;
 import nl.nicokorthout.alohomora.utilities.Encryption;
@@ -51,7 +53,7 @@ import static org.mockito.Mockito.when;
  * Unit tests for the User resource.
  *
  * @author Nico Korthout
- * @version 0.4.0
+ * @version 0.5.0
  * @since 22-12-2015
  */
 public class UserResourceTest {
@@ -68,6 +70,7 @@ public class UserResourceTest {
                     .setTokenParser(new DefaultJsonWebTokenParser())
                     .setTokenVerifier(new HmacSHA512Verifier(jsonWebTokenSecret))
                     .setAuthenticator(new JWTAuthenticator(dao))
+                    .setAuthorizer(new RoleAuthorizer())
                     .setRealm("SUPER SECRET STUFF")
                     .setPrefix("Bearer")
                     .buildAuthFilter()))
@@ -88,9 +91,9 @@ public class UserResourceTest {
         when(dao.findByEmail(eq("johndoe@example.com"))).thenReturn(Optional.empty());
 
         // Perform request to register user
-        final NewUser newUser = new NewUser("johndoe", "mypassword123", "johndoe@example.com");
         Response response = resources.getJerseyTest().target("/users").request()
-                .post(Entity.entity(newUser, MediaType.APPLICATION_JSON));
+                .post(Entity.entity(new NewUser("johndoe", "mypassword123", "johndoe@example.com",
+                        Role.CUSTOMER.toString()), MediaType.APPLICATION_JSON));
 
         // Check response is 201 Created
         assertThat(response.getStatus()).isEqualTo(Response.Status.CREATED.getStatusCode());
@@ -143,7 +146,7 @@ public class UserResourceTest {
 
     @Test
     public void registerValuesTooShort() {
-        final NewUser newUser = new NewUser("", "pa", "");
+        final NewUser newUser = new NewUser("", "pa", "", Role.CUSTOMER.toString());
 
         // Perform request to register null user
         Response response = resources.getJerseyTest().target("/users").request()
@@ -165,7 +168,7 @@ public class UserResourceTest {
     @Test
     public void registerUsernameTooShort() {
         final NewUser newUser = new NewUser("thisisareallylongusername", "mypassword123",
-                "johndoe@example.com");
+                "johndoe@example.com", Role.CUSTOMER.toString());
 
         // Perform request to register null user
         Response response = resources.getJerseyTest().target("/users").request()
@@ -191,13 +194,14 @@ public class UserResourceTest {
                 .email("johndoe@example.com")
                 .salt("salt".getBytes())
                 .password("password".getBytes())
+                .role(Role.CUSTOMER.toString())
                 .build();
         when(dao.find(eq("johndoe"))).thenReturn(Optional.of(user));
 
         // Perform request to register null user
-        final NewUser newUser = new NewUser("johndoe", "mypassword123", "johndoe@example.com");
         Response response = resources.getJerseyTest().target("/users").request()
-                .post(Entity.entity(newUser, MediaType.APPLICATION_JSON));
+                .post(Entity.entity(new NewUser("johndoe", "mypassword123", "johndoe@example.com",
+                        Role.CUSTOMER.toString()), MediaType.APPLICATION_JSON));
 
         // Check response is 409 Conflict
         assertThat(response.getStatus()).isEqualTo(Response.Status.CONFLICT.getStatusCode());
@@ -220,14 +224,15 @@ public class UserResourceTest {
                 .email(email)
                 .salt("salt".getBytes())
                 .password("password".getBytes())
+                .role(Role.CUSTOMER.toString())
                 .build();
         when(dao.find(eq("notjohndoe"))).thenReturn(Optional.empty());
         when(dao.findByEmail(eq(email))).thenReturn(Optional.of(user));
 
         // Perform request to register null user
-        final NewUser newUser = new NewUser("notjohndoe", "mypassword123", email);
         Response response = resources.getJerseyTest().target("/users").request()
-                .post(Entity.entity(newUser, MediaType.APPLICATION_JSON));
+                .post(Entity.entity(new NewUser("notjohndoe", "mypassword123", email,
+                        Role.CUSTOMER.toString()), MediaType.APPLICATION_JSON));
 
         // Check response is 409 Conflict
         assertThat(response.getStatus()).isEqualTo(Response.Status.CONFLICT.getStatusCode());
@@ -241,11 +246,11 @@ public class UserResourceTest {
 
     @Test
     public void registerAdmin() {
-        final NewUser newUser = new NewUser("admin", "mypassword123", "johndoe@example.com");
 
         // Perform request to register null user
         Response response = resources.getJerseyTest().target("/users").request()
-                .post(Entity.entity(newUser, MediaType.APPLICATION_JSON));
+                .post(Entity.entity(new NewUser("admin", "mypassword123", "johndoe@example.com",
+                        Role.CUSTOMER.toString()), MediaType.APPLICATION_JSON));
 
         // Check response is 422 Unprocessable Entity
         assertThat(response.getStatus()).isEqualTo(422);
@@ -260,11 +265,10 @@ public class UserResourceTest {
 
     @Test
     public void registerMe() {
-        final NewUser newUser = new NewUser("me", "mypassword123", "johndoe@example.com");
-
         // Perform request to register null user
         Response response = resources.getJerseyTest().target("/users").request()
-                .post(Entity.entity(newUser, MediaType.APPLICATION_JSON));
+                .post(Entity.entity(new NewUser("me", "mypassword123", "johndoe@example.com",
+                        Role.CUSTOMER.toString()), MediaType.APPLICATION_JSON));
 
         // Check response is 422 Unprocessable Entity
         assertThat(response.getStatus()).isEqualTo(422);
@@ -279,11 +283,10 @@ public class UserResourceTest {
 
     @Test
     public void registerNonAlphanumeric() {
-        final NewUser newUser = new NewUser("iam!@#$%^", "mypassword123", "johndoe@example.com");
-
         // Perform request to register null user
         Response response = resources.getJerseyTest().target("/users").request()
-                .post(Entity.entity(newUser, MediaType.APPLICATION_JSON));
+                .post(Entity.entity(new NewUser("iam!@#$%^", "mypassword123", "johndoe@example.com",
+                        Role.CUSTOMER.toString()), MediaType.APPLICATION_JSON));
 
         // Check response is 422 Unprocessable Entity
         assertThat(response.getStatus()).isEqualTo(422);
@@ -291,6 +294,24 @@ public class UserResourceTest {
         // Check errors are correct and human readable
         ValidationErrorMessage message = response.readEntity(ValidationErrorMessage.class);
         assertThat(message.getErrors()).containsOnly("username must be alphanumeric");
+
+        // Check changes in database
+        verify(dao, times(0)).store(isA(User.class));
+    }
+
+    @Test
+    public void registerEmailNotValid() {
+        // Perform request to register null user
+        Response response = resources.getJerseyTest().target("/users").request()
+                .post(Entity.entity(new NewUser("johndoe", "mypassword123", "justsometext.com",
+                        Role.CUSTOMER.toString()), MediaType.APPLICATION_JSON));
+
+        // Check response is 422 Unprocessable Entity
+        assertThat(response.getStatus()).isEqualTo(422);
+
+        // Check errors are correct and human readable
+        ValidationErrorMessage message = response.readEntity(ValidationErrorMessage.class);
+        assertThat(message.getErrors()).containsOnly("email must be valid");
 
         // Check changes in database
         verify(dao, times(0)).store(isA(User.class));
@@ -309,6 +330,7 @@ public class UserResourceTest {
                 .email("johndoe@example.com")
                 .salt(salt)
                 .password(hashedPassword)
+                .role(Role.CUSTOMER.toString())
                 .build();
 
         // Make sure one user exists
@@ -364,6 +386,7 @@ public class UserResourceTest {
                 .email("johndoe@example.com")
                 .salt(salt)
                 .password(hashedPassword)
+                .role(Role.CUSTOMER.toString())
                 .build();
 
         // Make sure one user exists
@@ -427,6 +450,7 @@ public class UserResourceTest {
                 .email("johndoe@example.com")
                 .salt(salt)
                 .password(hashedPassword)
+                .role(Role.CUSTOMER.toString())
                 .build();
 
         // Make sure one user exists
@@ -464,6 +488,7 @@ public class UserResourceTest {
                 .email("johndoe@example.com")
                 .salt(salt)
                 .password(hashedPassword)
+                .role(Role.CUSTOMER.toString())
                 .build();
 
         // Make sure one user exists
@@ -501,6 +526,7 @@ public class UserResourceTest {
                 .email("johndoe@example.com")
                 .salt(salt)
                 .password(hashedPassword)
+                .role(Role.CUSTOMER.toString())
                 .build();
 
         // Make sure one user exists
@@ -536,6 +562,7 @@ public class UserResourceTest {
                 .email(email)
                 .salt(salt)
                 .password(hashedPassword)
+                .role(Role.CUSTOMER.toString())
                 .build();
 
         // Make sure one user exists
@@ -567,6 +594,7 @@ public class UserResourceTest {
                 .username(username)
                 .registered(LocalDate.now())
                 .email("johndoe@example.com")
+                .role(Role.CUSTOMER.toString())
                 .build();
         when(dao.find(username)).thenReturn(Optional.of(user));
 
@@ -644,6 +672,9 @@ public class UserResourceTest {
                 .username(username)
                 .registered(LocalDate.now())
                 .email("johndoe@example.com")
+                .password("somepassword".getBytes())
+                .salt("somesalt".getBytes())
+                .role(Role.CUSTOMER.toString())
                 .build();
         when(dao.find(username)).thenReturn(Optional.of(user));
 
@@ -695,6 +726,7 @@ public class UserResourceTest {
                 .username(username)
                 .registered(LocalDate.now())
                 .email("johndoe@example.com")
+                .role(Role.CUSTOMER.toString())
                 .build();
         when(dao.find(username)).thenReturn(Optional.of(user));
 

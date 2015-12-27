@@ -18,7 +18,7 @@ import java.util.Optional;
  * This interface is used to access the database's User table.
  *
  * @author Nico Korthout
- * @version 0.4.0
+ * @version 0.4.1
  * @since 18-12-2015
  */
 @RegisterMapper(UserMapper.class)
@@ -34,6 +34,7 @@ public interface UserDAO {
             "email varchar(254) not null, " +
             "salt binary(8) not null, " +
             "password binary(64) not null, " +
+            "role varchar(20) not null, " +
             "unique (email))")
     void createUserTable();
 
@@ -42,8 +43,8 @@ public interface UserDAO {
      *
      * @param user The user to store.
      */
-    @SqlUpdate("insert into user (username, registered, email, salt, password) " +
-            "values (:username, :registered, :email, :salt, :password)")
+    @SqlUpdate("insert into user (username, registered, email, salt, password, role) " +
+            "values (:username, :registered, :email, :salt, :password, :role)")
     void store(@BindBean User user);
 
     /**
@@ -53,7 +54,7 @@ public interface UserDAO {
      * @return An Optional containing the found user, or an empty Optional if not.
      */
     @SingleValueResult
-    @SqlQuery("select username, registered, email, salt, password from user " +
+    @SqlQuery("select username, registered, email, salt, password, role from user " +
             "where username = :username")
     Optional<User> find(@Bind("username") String username);
 
@@ -64,7 +65,7 @@ public interface UserDAO {
      * @return An Optional containing the found user, or an empty Optional if not.
      */
     @SingleValueResult
-    @SqlQuery("select username, registered, email, salt, password from user " +
+    @SqlQuery("select username, registered, email, salt, password, role from user " +
             "where email = :email")
     Optional<User> findByEmail(@Bind("email") String email);
 

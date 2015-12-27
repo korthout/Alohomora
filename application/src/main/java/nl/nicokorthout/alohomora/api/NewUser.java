@@ -4,6 +4,12 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import nl.nicokorthout.alohomora.core.Role;
+
+import org.apache.commons.validator.routines.EmailValidator;
+
+import java.util.Arrays;
+
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
@@ -14,22 +20,25 @@ import io.dropwizard.validation.ValidationMethod;
  * new User.
  *
  * @author Nico Korthout
- * @version 0.2.0
+ * @version 0.3.0
  * @since 19-12-2015
  */
 public class NewUser {
 
     @NotNull
     @Size(min = 1, max = 20)
-    private String username;
+    private final String username;
 
     @NotNull
     @Size(min = 3)
-    private String password;
+    private final String password;
 
     @NotNull
     @Size(min = 1, max = 254)
-    private String email;
+    private final String email;
+
+    @NotNull
+    private final String role;
 
     /**
      * Construct a new user.
@@ -37,14 +46,17 @@ public class NewUser {
      * @param username The username for the new user.
      * @param password The password for the new user.
      * @param email    The email address belonging to the new user.
+     * @param role     The role this user will have.
      */
     @JsonCreator
     public NewUser(@JsonProperty(value = "username") String username,
                    @JsonProperty(value = "password") String password,
-                   @JsonProperty(value = "email") String email) {
+                   @JsonProperty(value = "email") String email,
+                   @JsonProperty(value = "role") String role) {
         this.username = username;
         this.password = password;
         this.email = email;
+        this.role = role;
     }
 
     @ValidationMethod(message = "username may not be admin")
@@ -62,8 +74,24 @@ public class NewUser {
     @ValidationMethod(message = "username must be alphanumeric")
     @JsonIgnore
     public boolean isUsernameAlphanumeric() {
-        return  username != null
-                ? username.chars().allMatch(x -> Character.isLetterOrDigit(x)) : true;
+        return username != null
+                ? username.chars().allMatch(x -> Character.isLetterOrDigit(x)) : false;
+    }
+
+    @ValidationMethod(message = "email must be valid")
+    @JsonIgnore
+    public boolean isEmailValid() {
+        return EmailValidator.getInstance().isValid(email);
+    }
+
+    @ValidationMethod(message = "role must be an existing role")
+    @JsonIgnore
+    public boolean isRoleCorrect() {
+        return role != null ? Arrays.asList(Role.values())
+                .stream()
+                .map(Role::toString)
+                .anyMatch(x -> x.equals(role))
+                : false;
     }
 
     public String getUsername() {
@@ -78,6 +106,10 @@ public class NewUser {
         return email;
     }
 
+    public String getRole() {
+        return role;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -89,7 +121,8 @@ public class NewUser {
             return false;
         if (password != null ? !password.equals(newUser.password) : newUser.password != null)
             return false;
-        return email != null ? email.equals(newUser.email) : newUser.email == null;
+        if (email != null ? !email.equals(newUser.email) : newUser.email != null) return false;
+        return role != null ? role.equals(newUser.role) : newUser.role == null;
     }
 
     @Override
@@ -97,8 +130,8 @@ public class NewUser {
         int result = username != null ? username.hashCode() : 0;
         result = 31 * result + (password != null ? password.hashCode() : 0);
         result = 31 * result + (email != null ? email.hashCode() : 0);
+        result = 31 * result + (role != null ? role.hashCode() : 0);
         return result;
     }
-
 }
 
