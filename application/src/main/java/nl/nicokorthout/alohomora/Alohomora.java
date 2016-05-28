@@ -17,9 +17,8 @@ import org.skife.jdbi.v2.DBI;
 import io.dropwizard.Application;
 import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
-import io.dropwizard.java8.Java8Bundle;
-import io.dropwizard.java8.jdbi.DBIFactory;
-import io.dropwizard.java8.jdbi.OptionalContainerFactory;
+import io.dropwizard.jdbi.DBIFactory;
+import io.dropwizard.jdbi.OptionalContainerFactory;
 import io.dropwizard.jdbi.bundles.DBIExceptionsBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
@@ -42,7 +41,6 @@ public class Alohomora extends Application<AlohomoraConfiguration> {
     public void initialize(Bootstrap<AlohomoraConfiguration> bootstrap) {
         super.initialize(bootstrap);
         bootstrap.addBundle(new DBIExceptionsBundle());
-        bootstrap.addBundle(new Java8Bundle());
     }
 
     @Override

@@ -120,7 +120,7 @@ public class UserResourceTest {
 
         // Check errors are correct and human readable
         ValidationErrorMessage message = response.readEntity(ValidationErrorMessage.class);
-        assertThat(message.getErrors()).containsOnly("The request entity was empty");
+        assertThat(message.getErrors()).containsOnly("The request body may not be null");
 
         // Check changes in database
         verify(dao, times(0)).store(isA(User.class));
@@ -749,12 +749,12 @@ public class UserResourceTest {
                 .put(Entity.entity(password, MediaType.APPLICATION_JSON));
 
         // Check response code
-        assertThat(response.getStatus()).isEqualTo(Response.Status.BAD_REQUEST.getStatusCode());
+        assertThat(response.getStatus()).isEqualTo(422);
 
         // Check errors are correct and human readable
         ValidationErrorMessage message = response.readEntity(ValidationErrorMessage.class);
         assertThat(message.getErrors())
-                .containsOnly("changePassword.arg1 size must be between 3 and 2147483647");
+                .containsOnly("The request body length must be between 3 and 2147483647");
 
         // Make sure user is updated in the database
         verify(dao, times(0)).update(any(User.class));

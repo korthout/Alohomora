@@ -14,6 +14,7 @@ import nl.nicokorthout.alohomora.utilities.Encryption;
 
 import org.apache.commons.validator.routines.EmailValidator;
 import org.glassfish.jersey.internal.util.Base64;
+import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
@@ -27,7 +28,6 @@ import java.util.Optional;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -53,6 +53,8 @@ import io.dropwizard.auth.Auth;
  * @since 06-12-2015
  */
 @Path("/users")
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
 public class UserResource {
 
     private final Logger logger = LoggerFactory.getLogger(UserResource.class);
@@ -82,9 +84,7 @@ public class UserResource {
      * @return 201 Response if successful, 4XX Response if not.
      */
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response register(@Valid NewUser newUser, @Context UriInfo uriInfo) {
+    public Response register(@NotNull @Valid NewUser newUser, @Context UriInfo uriInfo) {
         // Check username available
         if (userDAO.find(newUser.getUsername()).isPresent()) {
             return Response.status(Response.Status.CONFLICT).entity("username already in use").build();
@@ -126,7 +126,6 @@ public class UserResource {
      */
     @Path("me/token")
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
     public Response login(@HeaderParam(HttpHeaders.AUTHORIZATION) @NotEmpty String authorization) {
         if (authorization.startsWith("Basic")) {
 
@@ -207,7 +206,6 @@ public class UserResource {
      */
     @Path("me")
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
     public User getMe(@Auth User user) {
         return user;
     }
@@ -221,9 +219,7 @@ public class UserResource {
      */
     @Path("me/password")
     @PUT
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response changePassword(@Auth User user, @NotNull @Size(min = 3) String password) {
+    public Response changePassword(@Auth User user, @NotNull @Length(min = 3) String password) {
         final byte[] salt = encryption.generateSalt();
         final byte[] hashedPassword = encryption.hashPassword(password, salt);
         userDAO.update(user.asBuilder().password(hashedPassword).salt(salt).build());

@@ -9,23 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <properties>
-        <dropwizard-java8-version>0.9.0-1</dropwizard-java8-version>
-    </properties>
-
     <artifactId>alohomora-application</artifactId>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 
     <dependencies>
         <!--Dropwizard framework-->
@@ -37,19 +21,9 @@
 
         <!--Java 8 support-->
         <dependency>
-            <groupId>io.dropwizard.modules</groupId>
-            <artifactId>dropwizard-java8</artifactId>
-            <version>${dropwizard-java8-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.dropwizard.modules</groupId>
-            <artifactId>dropwizard-java8-jdbi</artifactId>
-            <version>${dropwizard-java8-version}</version>
-        </dependency>
-        <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>2.6.1</version>
+            <version>2.7.0</version>
         </dependency>
 
         <!--MySQL-->
