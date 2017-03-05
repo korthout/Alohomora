@@ -20,6 +20,11 @@ public class UserMapper implements ResultSetMapper<User> {
     @Override
     public User map(int index, ResultSet resultSet, StatementContext statementContext)
             throws SQLException {
+
+        if (!resultSet.isBeforeFirst() ) {
+            return null;
+        }
+
         return User.builder()
                 .username(resultSet.getString("username"))
                 .registered(resultSet.getDate("registered").toLocalDate())

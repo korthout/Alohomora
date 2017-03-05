@@ -54,7 +54,8 @@ public interface UserDAO {
      * @return An Optional containing the found user, or an empty Optional if not.
      */
     @SingleValueResult
-    @SqlQuery("select username, registered, email, salt, password, role from user " +
+    @SqlQuery("select username, registered, email, salt, password, role " +
+            "from user " +
             "where username = :username")
     Optional<User> find(@Bind("username") String username);
 
