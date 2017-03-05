@@ -7,7 +7,9 @@ import com.github.toastshaman.dropwizard.auth.jwt.parser.DefaultJsonWebTokenPars
 import nl.nicokorthout.alohomora.auth.JWTAuthenticator;
 import nl.nicokorthout.alohomora.auth.RoleAuthorizer;
 import nl.nicokorthout.alohomora.core.User;
+import nl.nicokorthout.alohomora.db.AdvertisementDAO;
 import nl.nicokorthout.alohomora.db.UserDAO;
+import nl.nicokorthout.alohomora.resources.AdvertisementResource;
 import nl.nicokorthout.alohomora.resources.UserResource;
 import nl.nicokorthout.alohomora.utilities.Encryption;
 
@@ -53,6 +55,7 @@ public class Alohomora extends Application<AlohomoraConfiguration> {
 
         // Create the DAOs
         final UserDAO userDAO = jdbi.onDemand(UserDAO.class);
+        final AdvertisementDAO advertisementDAO = jdbi.onDemand(AdvertisementDAO.class);
 
         // Create the tables, if they don't yet exists
         userDAO.createUserTable();
@@ -77,6 +80,7 @@ public class Alohomora extends Application<AlohomoraConfiguration> {
 
         // Register resources
         environment.jersey().register(new UserResource(userDAO, encryption, jsonWebTokenSecret));
+        environment.jersey().register(new AdvertisementResource(advertisementDAO));
     }
 
 }
