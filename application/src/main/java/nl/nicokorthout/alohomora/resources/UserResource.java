@@ -9,6 +9,7 @@ import com.github.toastshaman.dropwizard.auth.jwt.model.JsonWebTokenHeader;
 
 import nl.nicokorthout.alohomora.api.NewUser;
 import nl.nicokorthout.alohomora.core.User;
+import nl.nicokorthout.alohomora.core.UserRegistration;
 import nl.nicokorthout.alohomora.db.UserDAO;
 import nl.nicokorthout.alohomora.utilities.Encryption;
 
@@ -46,11 +47,7 @@ import javax.ws.rs.core.UriInfo;
 import io.dropwizard.auth.Auth;
 
 /**
- * The user resource provides access to user functions for clients.
- *
- * @author Nico Korthout
- * @version 0.4.1
- * @since 06-12-2015
+ * The user resource provides access to user functions like registration and login as a REST-ful API.
  */
 @Path("/users")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -58,64 +55,54 @@ import io.dropwizard.auth.Auth;
 public class UserResource {
 
     private final Logger logger = LoggerFactory.getLogger(UserResource.class);
-
     private final UserDAO userDAO;
     private final Encryption encryption;
     private final byte[] jsonWebTokenSecret;
+    private final UserRegistration userRegistration;
 
-    /**
-     * Constructor for the user resource.
-     *
-     * @param userDAO            A User DAO.
-     * @param encryption         The Encryption that will be used for password hashing.
-     * @param jsonWebTokenSecret Key will be used to generate JWTs for authenticated users.
-     */
     public UserResource(@NotNull UserDAO userDAO, @NotNull Encryption encryption,
-                        @NotNull byte[] jsonWebTokenSecret) {
+                        @NotNull byte[] jsonWebTokenSecret, @NotNull UserRegistration userRegistration) {
         this.userDAO = Preconditions.checkNotNull(userDAO, "UserDAO is not set");
         this.encryption = Preconditions.checkNotNull(encryption, "Encryption is not set");
         this.jsonWebTokenSecret = Preconditions.checkNotNull(jsonWebTokenSecret, "JWT Secret is not set");
+        this.userRegistration = Preconditions.checkNotNull(userRegistration, "UserRegistration is not set");
     }
 
     /**
      * Register a new user.
-     *
-     * @param newUser The new user to register.
-     * @return 201 Response if successful, 4XX Response if not.
+     * @return 201 Created Response if successful, 4XX Response if not.
      */
     @POST
     public Response register(@NotNull @Valid NewUser newUser, @Context UriInfo uriInfo) {
-        // Check username available
-        if (userDAO.find(newUser.getUsername()).isPresent()) {
-            logger.debug("Tried to register user with duplicate name '{}'", newUser.getUsername());
-            return Response.status(Response.Status.CONFLICT).entity("username already in use").build();
-        }
-        // Check email available
-        if (userDAO.findByEmail(newUser.getEmail()).isPresent()) {
-            logger.debug("Tried to register user with duplicate email '{}'", newUser.getEmail());
-            return Response.status(Response.Status.CONFLICT).entity("email already in use").build();
-        }
+        if (!userRegistration.checkUsernameAvailable(newUser))
+            return getResponseUsernameTaken();
 
-        // Hash Password
-        byte[] salt = encryption.generateSalt();
-        byte[] hashedPassword = encryption.hashPassword(newUser.getPassword(), salt);
+        if (!userRegistration.checkEmailAvailable(newUser))
+            return getResponseEmailTaken();
 
-        // Create a User from the NewUser
-        User user = User.builder()
-                .username(newUser.getUsername())
-                .registered(LocalDate.now())
-                .email(newUser.getEmail())
-                .salt(salt)
-                .password(hashedPassword)
-                .role(newUser.getRole())
+        User user = userRegistration.registerUser(newUser);
+        return getCreatedResponse(uriInfo, user);
+    }
+
+    private Response getResponseUsernameTaken() {
+        return Response.status(Response.Status.CONFLICT)
+                .entity("username already in use")
                 .build();
+    }
 
-        // Register user
-        userDAO.store(user);
-        logger.debug("Registered user '{}'", user.getUsername());
+    private Response getResponseEmailTaken() {
+        return Response.status(Response.Status.CONFLICT)
+                .entity("email already in use")
+                .build();
+    }
 
-        // Respond: 201 Created with location header pointing to login URI
-        URI location = uriInfo.getBaseUriBuilder().path("users/me/token").build();
+    /**
+     * @return 201 Created Response with the location header pointing to the user login URI
+     */
+    private Response getCreatedResponse(@NotNull UriInfo uriInfo, @NotNull User user) {
+        URI location = uriInfo.getBaseUriBuilder()
+                .path("users/me/token")
+                .build();
         return Response.created(location)
                 .entity("{\"username\":\"" + user.getUsername() + "\"}")
                 .build();
