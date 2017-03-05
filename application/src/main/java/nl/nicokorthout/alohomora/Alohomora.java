@@ -7,6 +7,7 @@ import com.github.toastshaman.dropwizard.auth.jwt.parser.DefaultJsonWebTokenPars
 import nl.nicokorthout.alohomora.auth.JWTAuthenticator;
 import nl.nicokorthout.alohomora.auth.RoleAuthorizer;
 import nl.nicokorthout.alohomora.core.User;
+import nl.nicokorthout.alohomora.core.UserRegistration;
 import nl.nicokorthout.alohomora.db.AdvertisementDAO;
 import nl.nicokorthout.alohomora.db.UserDAO;
 import nl.nicokorthout.alohomora.resources.AdvertisementResource;
@@ -28,12 +29,18 @@ import io.dropwizard.setup.Environment;
 /**
  * This class represents the applications starting point. It sets-up the application and its
  * resources.
- *
- * @author Nico Korthout
- * @version 0.2.2
- * @since 06-12-2015
  */
 public class Alohomora extends Application<AlohomoraConfiguration> {
+
+    private DBIFactory dbiFactory;
+    private DBI jdbi;
+    private UserDAO userDAO;
+    private AdvertisementDAO advertisementDAO;
+    private byte[] jsonWebTokenSecret;
+    private Encryption encryption;
+    private UserRegistration userRegistration;
+    private UserResource userResource;
+    private AdvertisementResource advertisementResource;
 
     public static void main(String[] args) throws Exception {
         new Alohomora().run(args);
@@ -47,21 +54,40 @@ public class Alohomora extends Application<AlohomoraConfiguration> {
 
     @Override
     public void run(AlohomoraConfiguration config, Environment environment) throws Exception {
+        setupDatabase(config, environment);
+        setupUtilities();
+        setupDomainObjects(config);
+        registerJWTAuthFilter(environment);
+        setupResources(environment);
+    }
 
-        // Setup the database connection
-        final DBIFactory factory = new DBIFactory();
-        final DBI jdbi = factory.build(environment, config.getDataSourceFactory(), "mysql");
+    private void setupDatabase(AlohomoraConfiguration config, Environment environment) {
+        dbiFactory = new DBIFactory();
+        jdbi = dbiFactory.build(environment, config.getDataSourceFactory(), "mysql");
         jdbi.registerContainerFactory(new OptionalContainerFactory());
+        setupDAOs();
+        createDBTables(userDAO);
+    }
 
-        // Create the DAOs
-        final UserDAO userDAO = jdbi.onDemand(UserDAO.class);
-        final AdvertisementDAO advertisementDAO = jdbi.onDemand(AdvertisementDAO.class);
+    private void setupDAOs() {
+        userDAO = jdbi.onDemand(UserDAO.class);
+        advertisementDAO = jdbi.onDemand(AdvertisementDAO.class);
+    }
 
-        // Create the tables, if they don't yet exists
+    private void createDBTables(UserDAO userDAO) {
         userDAO.createUserTable();
+    }
 
-        // Setup the JWT Auth Filter
-        final byte[] jsonWebTokenSecret = config.getJsonWebTokenSecret();
+    private void setupUtilities() {
+        encryption = new Encryption();
+    }
+
+    private void setupDomainObjects(AlohomoraConfiguration config) {
+        jsonWebTokenSecret = config.getJsonWebTokenSecret();
+        userRegistration = new UserRegistration(userDAO, encryption);
+    }
+
+    private void registerJWTAuthFilter(Environment environment) {
         environment.jersey().register(new AuthDynamicFeature(
                 new JWTAuthFilter.Builder<User>()
                         .setCookieName("jwt")
@@ -74,13 +100,17 @@ public class Alohomora extends Application<AlohomoraConfiguration> {
                         .buildAuthFilter()));
         environment.jersey().register(new AuthValueFactoryProvider.Binder<>(User.class));
         environment.jersey().register(RolesAllowedDynamicFeature.class);
+    }
 
-        // Setup utilities
-        final Encryption encryption = new Encryption();
+    private void setupResources(Environment environment) {
+        userResource = new UserResource(userDAO, encryption, jsonWebTokenSecret, userRegistration);
+        advertisementResource = new AdvertisementResource(advertisementDAO);
+        registerResources(environment);
+    }
 
-        // Register resources
-        environment.jersey().register(new UserResource(userDAO, encryption, jsonWebTokenSecret));
-        environment.jersey().register(new AdvertisementResource(advertisementDAO));
+    private void registerResources(Environment environment) {
+        environment.jersey().register(userResource);
+        environment.jersey().register(advertisementResource);
     }
 
 }

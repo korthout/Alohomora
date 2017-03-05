@@ -13,6 +13,7 @@ import nl.nicokorthout.alohomora.auth.JWTAuthenticator;
 import nl.nicokorthout.alohomora.auth.RoleAuthorizer;
 import nl.nicokorthout.alohomora.core.Role;
 import nl.nicokorthout.alohomora.core.User;
+import nl.nicokorthout.alohomora.core.UserRegistration;
 import nl.nicokorthout.alohomora.db.UserDAO;
 import nl.nicokorthout.alohomora.utilities.Encryption;
 
@@ -58,9 +59,11 @@ import static org.mockito.Mockito.when;
  */
 public class UserResourceTest {
 
-    private static final UserDAO dao = mock(UserDAO.class);
+    private static final UserDAO userDAO = mock(UserDAO.class);
 
     private final byte[] jsonWebTokenSecret = "secret".getBytes();
+    private final Encryption encryption = new Encryption();
+    private final UserRegistration userRegistration = new UserRegistration(userDAO, encryption);
 
     @Rule
     public final ResourceTestRule resources = ResourceTestRule.builder()
@@ -69,26 +72,26 @@ public class UserResourceTest {
                     .setCookieName("jwt")
                     .setTokenParser(new DefaultJsonWebTokenParser())
                     .setTokenVerifier(new HmacSHA512Verifier(jsonWebTokenSecret))
-                    .setAuthenticator(new JWTAuthenticator(dao))
+                    .setAuthenticator(new JWTAuthenticator(userDAO))
                     .setAuthorizer(new RoleAuthorizer())
                     .setRealm("SUPER SECRET STUFF")
                     .setPrefix("Bearer")
                     .buildAuthFilter()))
             .addProvider(RolesAllowedDynamicFeature.class)
             .addProvider(new AuthValueFactoryProvider.Binder<>(User.class))
-            .addResource(new UserResource(dao, new Encryption(), jsonWebTokenSecret))
+            .addResource(new UserResource(userDAO, encryption, jsonWebTokenSecret, userRegistration))
             .build();
 
     @Before
     public void setup() {
-        reset(dao);
+        reset(userDAO);
     }
 
     @Test
     public void registerNewUser() {
         // Make sure username does not yet exists
-        when(dao.find(eq("johndoe"))).thenReturn(Optional.empty());
-        when(dao.findByEmail(eq("johndoe@example.com"))).thenReturn(Optional.empty());
+        when(userDAO.find(eq("johndoe"))).thenReturn(Optional.empty());
+        when(userDAO.findByEmail(eq("johndoe@example.com"))).thenReturn(Optional.empty());
 
         // Perform request to register user
         Response response = resources.getJerseyTest().target("/users").request()
@@ -106,7 +109,7 @@ public class UserResourceTest {
                 .isEqualTo("http://localhost:9998/users/me/token");
 
         // Check changes in database
-        verify(dao).store(isA(User.class));
+        verify(userDAO).store(isA(User.class));
     }
 
     @Test
@@ -123,7 +126,7 @@ public class UserResourceTest {
         assertThat(message.getErrors()).containsOnly("The request body may not be null");
 
         // Check changes in database
-        verify(dao, times(0)).store(isA(User.class));
+        verify(userDAO, times(0)).store(isA(User.class));
     }
 
     @Test
@@ -141,7 +144,7 @@ public class UserResourceTest {
                 "password may not be null", "email may not be null");
 
         // Check changes in database
-        verify(dao, times(0)).store(isA(User.class));
+        verify(userDAO, times(0)).store(isA(User.class));
     }
 
     @Test
@@ -162,7 +165,7 @@ public class UserResourceTest {
                 "email size must be between 1 and 254");
 
         // Check changes in database
-        verify(dao, times(0)).store(isA(User.class));
+        verify(userDAO, times(0)).store(isA(User.class));
     }
 
     @Test
@@ -182,7 +185,7 @@ public class UserResourceTest {
         assertThat(message.getErrors()).containsOnly("username size must be between 1 and 20");
 
         // Check changes in database
-        verify(dao, times(0)).store(isA(User.class));
+        verify(userDAO, times(0)).store(isA(User.class));
     }
 
     @Test
@@ -196,7 +199,7 @@ public class UserResourceTest {
                 .password("password".getBytes())
                 .role(Role.CUSTOMER.toString())
                 .build();
-        when(dao.find(eq("johndoe"))).thenReturn(Optional.of(user));
+        when(userDAO.find(eq("johndoe"))).thenReturn(Optional.of(user));
 
         // Perform request to register null user
         Response response = resources.getJerseyTest().target("/users").request()
@@ -210,7 +213,7 @@ public class UserResourceTest {
         assertThat(response.readEntity(String.class)).isEqualTo("username already in use");
 
         // Check changes in database
-        verify(dao, times(0)).store(isA(User.class));
+        verify(userDAO, times(0)).store(isA(User.class));
     }
 
     @Test
@@ -226,8 +229,8 @@ public class UserResourceTest {
                 .password("password".getBytes())
                 .role(Role.CUSTOMER.toString())
                 .build();
-        when(dao.find(eq("notjohndoe"))).thenReturn(Optional.empty());
-        when(dao.findByEmail(eq(email))).thenReturn(Optional.of(user));
+        when(userDAO.find(eq("notjohndoe"))).thenReturn(Optional.empty());
+        when(userDAO.findByEmail(eq(email))).thenReturn(Optional.of(user));
 
         // Perform request to register null user
         Response response = resources.getJerseyTest().target("/users").request()
@@ -241,7 +244,7 @@ public class UserResourceTest {
         assertThat(response.readEntity(String.class)).isEqualTo("email already in use");
 
         // Check changes in database
-        verify(dao, times(0)).store(isA(User.class));
+        verify(userDAO, times(0)).store(isA(User.class));
     }
 
     @Test
@@ -260,7 +263,7 @@ public class UserResourceTest {
         assertThat(message.getErrors()).containsOnly("username may not be admin");
 
         // Check changes in database
-        verify(dao, times(0)).store(isA(User.class));
+        verify(userDAO, times(0)).store(isA(User.class));
     }
 
     @Test
@@ -278,7 +281,7 @@ public class UserResourceTest {
         assertThat(message.getErrors()).containsOnly("username may not be me");
 
         // Check changes in database
-        verify(dao, times(0)).store(isA(User.class));
+        verify(userDAO, times(0)).store(isA(User.class));
     }
 
     @Test
@@ -296,7 +299,7 @@ public class UserResourceTest {
         assertThat(message.getErrors()).containsOnly("username must be alphanumeric");
 
         // Check changes in database
-        verify(dao, times(0)).store(isA(User.class));
+        verify(userDAO, times(0)).store(isA(User.class));
     }
 
     @Test
@@ -314,7 +317,7 @@ public class UserResourceTest {
         assertThat(message.getErrors()).containsOnly("email must be valid");
 
         // Check changes in database
-        verify(dao, times(0)).store(isA(User.class));
+        verify(userDAO, times(0)).store(isA(User.class));
     }
 
     @Test
@@ -334,7 +337,7 @@ public class UserResourceTest {
                 .build();
 
         // Make sure one user exists
-        when(dao.find(username)).thenReturn(Optional.of(user));
+        when(userDAO.find(username)).thenReturn(Optional.of(user));
 
         // Encode the user's credentials using Base64
         String authorization = "Basic " + Base64.encodeAsString(username + ":" + password);
@@ -359,7 +362,7 @@ public class UserResourceTest {
         // Encode the user's credentials using Base64
         String authorization = "Basic " + Base64.encodeAsString("johndoe:mypassword123");
 
-        when(dao.find(any(String.class))).thenReturn(Optional.empty());
+        when(userDAO.find(any(String.class))).thenReturn(Optional.empty());
 
         // Perform request to register null user
         Response response = resources.getJerseyTest().target("/users/me/token").request()
@@ -390,7 +393,7 @@ public class UserResourceTest {
                 .build();
 
         // Make sure one user exists
-        when(dao.find(username)).thenReturn(Optional.of(user));
+        when(userDAO.find(username)).thenReturn(Optional.of(user));
 
         // Encode the user's credentials using Base64
         String authorization = "Basic " + Base64.encodeAsString(username + ":wrongpassword");
@@ -454,7 +457,7 @@ public class UserResourceTest {
                 .build();
 
         // Make sure one user exists
-        when(dao.find(username.toUpperCase())).thenReturn(Optional.of(user));
+        when(userDAO.find(username.toUpperCase())).thenReturn(Optional.of(user));
 
         // Encode the user's credentials using Base64
         String authorization = "Basic " +
@@ -492,7 +495,7 @@ public class UserResourceTest {
                 .build();
 
         // Make sure one user exists
-        when(dao.find(username.toLowerCase())).thenReturn(Optional.of(user));
+        when(userDAO.find(username.toLowerCase())).thenReturn(Optional.of(user));
 
         // Encode the user's credentials using Base64
         String authorization = "Basic " +
@@ -530,7 +533,7 @@ public class UserResourceTest {
                 .build();
 
         // Make sure one user exists
-        when(dao.find(username)).thenReturn(Optional.of(user));
+        when(userDAO.find(username)).thenReturn(Optional.of(user));
 
         // Encode the user's credentials using Base64
         String authorization = "Basic " +
@@ -566,7 +569,7 @@ public class UserResourceTest {
                 .build();
 
         // Make sure one user exists
-        when(dao.findByEmail(email)).thenReturn(Optional.of(user));
+        when(userDAO.findByEmail(email)).thenReturn(Optional.of(user));
 
         // Encode the user's credentials using Base64
         String authorization = "Basic " + Base64.encodeAsString(email + ":" + password);
@@ -596,7 +599,7 @@ public class UserResourceTest {
                 .email("johndoe@example.com")
                 .role(Role.CUSTOMER.toString())
                 .build();
-        when(dao.find(username)).thenReturn(Optional.of(user));
+        when(userDAO.find(username)).thenReturn(Optional.of(user));
 
         // Make sure user can be found
         final HmacSHA512Signer signer = new HmacSHA512Signer(jsonWebTokenSecret);
@@ -638,7 +641,7 @@ public class UserResourceTest {
     @Test
     public void getMeUserDoesNotExist() {
         // Make sure no user exists
-        when(dao.find(any(String.class))).thenReturn(Optional.empty());
+        when(userDAO.find(any(String.class))).thenReturn(Optional.empty());
 
         // Make sure user can be found
         final HmacSHA512Signer signer = new HmacSHA512Signer(jsonWebTokenSecret);
@@ -676,7 +679,7 @@ public class UserResourceTest {
                 .salt("somesalt".getBytes())
                 .role(Role.CUSTOMER.toString())
                 .build();
-        when(dao.find(username)).thenReturn(Optional.of(user));
+        when(userDAO.find(username)).thenReturn(Optional.of(user));
 
         // Make sure user can be found
         final HmacSHA512Signer signer = new HmacSHA512Signer(jsonWebTokenSecret);
@@ -700,7 +703,7 @@ public class UserResourceTest {
         assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
 
         // Make sure user is updated in the database
-        verify(dao, times(1)).update(any(User.class));
+        verify(userDAO, times(1)).update(any(User.class));
     }
 
     @Test
@@ -715,7 +718,7 @@ public class UserResourceTest {
         assertThat(response.getStatus()).isEqualTo(Response.Status.UNAUTHORIZED.getStatusCode());
 
         // Make sure user is updated in the database
-        verify(dao, times(0)).update(any(User.class));
+        verify(userDAO, times(0)).update(any(User.class));
     }
 
     @Test
@@ -728,7 +731,7 @@ public class UserResourceTest {
                 .email("johndoe@example.com")
                 .role(Role.CUSTOMER.toString())
                 .build();
-        when(dao.find(username)).thenReturn(Optional.of(user));
+        when(userDAO.find(username)).thenReturn(Optional.of(user));
 
         // Make sure user can be found
         final HmacSHA512Signer signer = new HmacSHA512Signer(jsonWebTokenSecret);
@@ -757,7 +760,7 @@ public class UserResourceTest {
                 .containsOnly("The request body length must be between 3 and 2147483647");
 
         // Make sure user is updated in the database
-        verify(dao, times(0)).update(any(User.class));
+        verify(userDAO, times(0)).update(any(User.class));
     }
 
 }
