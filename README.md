@@ -2,7 +2,9 @@
 A simple Dropwizard project that I use to learn more about web service development using modern Java.
 
 # Features
-So far, users can only register themselves and login.
+- Users can register themselves as customer, provider or admin.
+- Users can login with their credentials.
+- Logged-in providers can create advertisements.
 
 # Some technical choices
 - Data is stored in a MySQL database.
