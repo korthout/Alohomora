@@ -15,6 +15,7 @@ public class RoleAuthorizer implements Authorizer<User> {
 
     @Override
     public boolean authorize(final User user, final String role) {
+        System.out.println("authorizing user " + user.getName());
         return role.equalsIgnoreCase(user.getRole());
     }
 

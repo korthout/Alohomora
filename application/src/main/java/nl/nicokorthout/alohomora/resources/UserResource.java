@@ -72,7 +72,7 @@ public class UserResource {
      */
     public UserResource(@NotNull UserDAO userDAO, @NotNull Encryption encryption,
                         @NotNull byte[] jsonWebTokenSecret) {
-        this.userDAO = Preconditions.checkNotNull(userDAO, "User DAO is not set");
+        this.userDAO = Preconditions.checkNotNull(userDAO, "UserDAO is not set");
         this.encryption = Preconditions.checkNotNull(encryption, "Encryption is not set");
         this.jsonWebTokenSecret = Preconditions.checkNotNull(jsonWebTokenSecret, "JWT Secret is not set");
     }
@@ -87,10 +87,12 @@ public class UserResource {
     public Response register(@NotNull @Valid NewUser newUser, @Context UriInfo uriInfo) {
         // Check username available
         if (userDAO.find(newUser.getUsername()).isPresent()) {
+            logger.debug("Tried to register user with duplicate name '{}'", newUser.getUsername());
             return Response.status(Response.Status.CONFLICT).entity("username already in use").build();
         }
         // Check email available
         if (userDAO.findByEmail(newUser.getEmail()).isPresent()) {
+            logger.debug("Tried to register user with duplicate email '{}'", newUser.getEmail());
             return Response.status(Response.Status.CONFLICT).entity("email already in use").build();
         }
 
@@ -99,7 +101,8 @@ public class UserResource {
         byte[] hashedPassword = encryption.hashPassword(newUser.getPassword(), salt);
 
         // Create a User from the NewUser
-        User user = User.builder().username(newUser.getUsername())
+        User user = User.builder()
+                .username(newUser.getUsername())
                 .registered(LocalDate.now())
                 .email(newUser.getEmail())
                 .salt(salt)
@@ -109,7 +112,7 @@ public class UserResource {
 
         // Register user
         userDAO.store(user);
-        logger.info("Registered user '{}'", user.getUsername());
+        logger.debug("Registered user '{}'", user.getUsername());
 
         // Respond: 201 Created with location header pointing to login URI
         URI location = uriInfo.getBaseUriBuilder().path("users/me/token").build();

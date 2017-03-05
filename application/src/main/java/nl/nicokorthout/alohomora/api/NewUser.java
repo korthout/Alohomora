@@ -74,8 +74,7 @@ public class NewUser {
     @ValidationMethod(message = "username must be alphanumeric")
     @JsonIgnore
     public boolean isUsernameAlphanumeric() {
-        return username != null
-                ? username.chars().allMatch(x -> Character.isLetterOrDigit(x)) : false;
+        return username != null && username.chars().allMatch(Character::isLetterOrDigit);
     }
 
     @ValidationMethod(message = "email must be valid")
@@ -87,11 +86,10 @@ public class NewUser {
     @ValidationMethod(message = "role must be an existing role")
     @JsonIgnore
     public boolean isRoleCorrect() {
-        return role != null ? Arrays.asList(Role.values())
+        return role != null && Arrays.asList(Role.values())
                 .stream()
                 .map(Role::toString)
-                .anyMatch(x -> x.equals(role))
-                : false;
+                .anyMatch(x -> x.equals(role));
     }
 
     public String getUsername() {
