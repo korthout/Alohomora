@@ -1,2 +1,8 @@
 *.iml
+*.project
+*.classpath
+*.settings/
+*.lst
+
+
 alohomora-real.yml
