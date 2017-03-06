@@ -15,14 +15,6 @@ import javax.validation.constraints.Size;
 
 import io.dropwizard.validation.ValidationMethod;
 
-/**
- * Representation of a new User for the system. Contains everything that is necessary for creating a
- * new User.
- *
- * @author Nico Korthout
- * @version 0.3.0
- * @since 19-12-2015
- */
 public class NewUser {
 
     @NotNull
@@ -40,14 +32,6 @@ public class NewUser {
     @NotNull
     private final String role;
 
-    /**
-     * Construct a new user.
-     *
-     * @param username The username for the new user.
-     * @param password The password for the new user.
-     * @param email    The email address belonging to the new user.
-     * @param role     The role this user will have.
-     */
     @JsonCreator
     public NewUser(@JsonProperty(value = "username") String username,
                    @JsonProperty(value = "password") String password,

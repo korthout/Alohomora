@@ -9,10 +9,6 @@ import java.time.LocalDate;
 
 /**
  * Maps java.time.LocalDate arguments to java.sql.Date.
- *
- * @author Nico Korthout
- * @version 0.1.0
- * @since 18-12-2015
  */
 public class LocalDateArgumentMapper implements ArgumentFactory<LocalDate> {
 

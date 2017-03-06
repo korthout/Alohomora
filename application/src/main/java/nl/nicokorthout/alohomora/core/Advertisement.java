@@ -14,9 +14,6 @@ import java.time.LocalDate;
 
 import javax.validation.constraints.Min;
 
-/**
- * Created by nicokorthout on 27/12/15.
- */
 @JsonDeserialize(builder = Advertisement.AdvertisementBuilder.class)
 public class Advertisement {
 
@@ -40,7 +37,6 @@ public class Advertisement {
     }
 
     public Advertisement(AdvertisementBuilder builder) {
-//        Preconditions.checkArgument(builder.id > 0, "id is not positive");
         Preconditions.checkNotNull(builder.name, "name is not set");
         Preconditions.checkNotNull(builder.description, "description is not set");
         Preconditions.checkNotNull(builder.city, "city is not set");

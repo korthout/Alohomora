@@ -18,13 +18,6 @@ import java.util.Arrays;
 
 import javax.validation.constraints.NotNull;
 
-/**
- * A User represents a person using the system.
- *
- * @author Nico Korthout
- * @version 0.3.0
- * @since 18-12-2015
- */
 @JsonDeserialize(builder = User.UserBuilder.class)
 public class User implements Principal {
 
@@ -58,9 +51,10 @@ public class User implements Principal {
     }
 
     /**
-     * Retrieve a new UserBuilder object representing this User object. This can be used to make
-     * alterations to this object. Remember that this User object is immutable and cannot be
-     * altered. The new builder is only able to build a new User object.
+     * Retrieve a new UserBuilder object representing this User object.
+     * This can be used to make alterations to this object.
+     * Remember that this User object is immutable and cannot be altered.
+     * The new builder is only able to build a new User object.
      *
      * @return A UserBuilder object with the same values as this object.
      */

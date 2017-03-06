@@ -25,7 +25,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 /**
- * Created by nicokorthout on 27/12/15.
+ * The advertisement resource provides access to advertisement functions as a REST-ful API.
  */
 @Path("advertisements")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -42,8 +42,7 @@ public class AdvertisementResource {
 
     @POST
     @RolesAllowed("provider")
-    public Response createAdvertisement(@NotNull @Valid NewAdvertisement newAdvertisement,
-                                        @Context UriInfo uriInfo) {
+    public Response createAdvertisement(@NotNull @Valid NewAdvertisement newAdvertisement, @Context UriInfo uriInfo) {
         LocalDate now = LocalDate.now();
         Advertisement advertisement = Advertisement.builder()
                 .name(newAdvertisement.getName())

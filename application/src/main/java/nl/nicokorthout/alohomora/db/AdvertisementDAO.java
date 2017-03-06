@@ -3,7 +3,7 @@ package nl.nicokorthout.alohomora.db;
 import nl.nicokorthout.alohomora.core.Advertisement;
 
 /**
- * Created by nicokorthout on 26/12/2016.
+ * This interface is used to access the database's Advertisement table.
  */
 public interface AdvertisementDAO {
 

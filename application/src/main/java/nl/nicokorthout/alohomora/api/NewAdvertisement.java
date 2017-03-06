@@ -6,9 +6,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
-/**
- * Created by nicokorthout on 27/12/15.
- */
 public class NewAdvertisement {
 
     @NotNull

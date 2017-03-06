@@ -41,6 +41,8 @@ public class Alohomora extends Application<AlohomoraConfiguration> {
     private UserRegistration userRegistration;
     private UserResource userResource;
     private AdvertisementResource advertisementResource;
+    private AlohomoraConfiguration config;
+    private Environment environment;
 
     public static void main(String[] args) throws Exception {
         new Alohomora().run(args);
@@ -54,37 +56,39 @@ public class Alohomora extends Application<AlohomoraConfiguration> {
 
     @Override
     public void run(AlohomoraConfiguration config, Environment environment) throws Exception {
-        setupDatabase(config, environment);
+        this.config = config;
+        this.environment = environment;
+        setupDatabase();
         setupUtilities();
         setupDomainObjects(config);
         registerJWTAuthFilter(environment);
         setupResources(environment);
     }
 
-    private void setupDatabase(AlohomoraConfiguration config, Environment environment) {
-        dbiFactory = new DBIFactory();
-        jdbi = dbiFactory.build(environment, config.getDataSourceFactory(), "mysql");
+    private void setupDatabase() {
+        this.dbiFactory = new DBIFactory();
+        this.jdbi = dbiFactory.build(environment, config.getDataSourceFactory(), "mysql");
         jdbi.registerContainerFactory(new OptionalContainerFactory());
         setupDAOs();
         createDBTables(userDAO);
     }
 
     private void setupDAOs() {
-        userDAO = jdbi.onDemand(UserDAO.class);
-        advertisementDAO = jdbi.onDemand(AdvertisementDAO.class);
+        this.userDAO = jdbi.onDemand(UserDAO.class);
+        this.advertisementDAO = jdbi.onDemand(AdvertisementDAO.class);
     }
 
     private void createDBTables(UserDAO userDAO) {
-        userDAO.createUserTable();
+        userDAO.createUserTableIfNotExists();
     }
 
     private void setupUtilities() {
-        encryption = new Encryption();
+        this.encryption = new Encryption();
     }
 
     private void setupDomainObjects(AlohomoraConfiguration config) {
-        jsonWebTokenSecret = config.getJsonWebTokenSecret();
-        userRegistration = new UserRegistration(userDAO, encryption);
+        this.jsonWebTokenSecret = config.getJsonWebTokenSecret();
+        this.userRegistration = new UserRegistration(userDAO, encryption);
     }
 
     private void registerJWTAuthFilter(Environment environment) {
@@ -103,8 +107,8 @@ public class Alohomora extends Application<AlohomoraConfiguration> {
     }
 
     private void setupResources(Environment environment) {
-        userResource = new UserResource(userDAO, encryption, jsonWebTokenSecret, userRegistration);
-        advertisementResource = new AdvertisementResource(advertisementDAO);
+        this.userResource = new UserResource(userDAO, encryption, jsonWebTokenSecret, userRegistration);
+        this.advertisementResource = new AdvertisementResource(advertisementDAO);
         registerResources(environment);
     }
 

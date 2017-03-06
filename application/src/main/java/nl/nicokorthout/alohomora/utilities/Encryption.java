@@ -12,10 +12,6 @@ import javax.validation.constraints.NotNull;
 
 /**
  * The Encryption class is a utility to encrypt Strings (e.g. passwords).
- *
- * @author Nico Korthout
- * @version 0.1.1
- * @since 18-12-2015
  */
 public class Encryption {
 
@@ -28,41 +24,30 @@ public class Encryption {
     // 8 byte (64 bit) as recommended by RSA PKCS5
     private static final int SALT_LENGTH = 8;
 
-    private SecretKeyFactory secretKeyFactory;
-    private SecureRandom secureRandom;
+    // Password Based Key Derivative Function 512 bits (64 bytes)
+    private static final String SECRET_KEY_ALGORITHM = "PBKDF2WithHmacSHA512";
 
-    /**
-     * Constructor for Encryption
-     */
+    // SHA-1 is not secure, but is fine to use for generating some simply randomness like a salt.
+    private static final String RANDOM_ALGORITHM = "SHA1PRNG";
+
+    private final SecretKeyFactory secretKeyFactory;
+    private final SecureRandom randomGenerator;
+
     public Encryption() {
         try {
-            // Password Based Key Derivative Function 512 bits (64 bytes)
-            secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512");
-            secureRandom = SecureRandom.getInstance("SHA1PRNG");
+            secretKeyFactory = SecretKeyFactory.getInstance(SECRET_KEY_ALGORITHM);
+            randomGenerator = SecureRandom.getInstance(RANDOM_ALGORITHM);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
     }
 
-    /**
-     * Generate a new salt.
-     *
-     * @return newly generated salt.
-     */
     public byte[] generateSalt() {
         byte[] salt = new byte[SALT_LENGTH];
-        secureRandom.nextBytes(salt);
+        randomGenerator.nextBytes(salt);
         return salt;
     }
 
-    /**
-     * Hashes a password using the given salt. Hashing is done using the initiated {@link
-     * javax.crypto.SecretKeyFactory}.
-     *
-     * @param password the password to be hashed.
-     * @param salt     bytes to add to the password when hashing.
-     * @return hashed password in bytes.
-     */
     public byte[] hashPassword(@NotNull String password, @NotNull byte[] salt) {
         Preconditions.checkNotNull(password, "password required");
         Preconditions.checkNotNull(salt, "salt required");
@@ -77,9 +62,11 @@ public class Encryption {
 
     /**
      * The byte[] returned by MessageDigest does not have a nice textual representation, so some
-     * form of encoding is usually performed. <p> This implementation follows the example of David
-     * Flanagan's book "Java In A Nutshell", and converts a byte array into a String of hex
-     * characters. It has been slightly modified to comply modern standards. </p>
+     * form of encoding is usually performed.
+     *
+     * This implementation follows the example of David Flanagan's book "Java In A Nutshell",
+     * and converts a byte array into a String of hex characters.
+     * It has been slightly modified to comply modern standards.
      *
      * @param input bytes to encode.
      * @return String containing encoded bytes.
