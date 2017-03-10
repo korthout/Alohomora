@@ -2,7 +2,7 @@
 *.project
 *.classpath
 *.settings/
+*target/
 *.lst
-
 
 alohomora-real.yml
