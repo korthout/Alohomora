@@ -1,4 +1,4 @@
-# Alohomora [![Build Status](https://travis-ci.org/korthout/Alohomora.svg?branch=master)](https://travis-ci.org/korthout/Alohomora)
+# Alohomora [![Build Status](https://travis-ci.org/korthout/Alohomora.svg?branch=master)](https://travis-ci.org/korthout/Alohomora) [![Coverage Status](https://coveralls.io/repos/github/korthout/Alohomora/badge.svg?branch=master)](https://coveralls.io/github/korthout/Alohomora?branch=master)
 A simple Dropwizard project that I use to learn more about web service development using modern Java.
 
 # Features
