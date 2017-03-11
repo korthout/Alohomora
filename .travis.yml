@@ -4,10 +4,10 @@ jdk:
   - oraclejdk8
 
 script:
-  - mvn clean install org.jacoco:jacoco-maven-plugin:prepare-agent
+  - mvn clean install jacoco:report
 
 after_success:
-  - mvn org.eluder.coveralls:coveralls-maven-plugin:report
+  - mvn coveralls:report
 
 cache:
   directories:
