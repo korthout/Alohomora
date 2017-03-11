@@ -16,7 +16,7 @@
         <dependency>
           <groupId>io.dropwizard</groupId>
           <artifactId>dropwizard-jdbi</artifactId>
-          <version>${dropwizard-version}</version>
+          <version>${dropwizard.version}</version>
         </dependency>
 
         <!--Java 8 support-->
@@ -63,7 +63,7 @@
         <dependency>
             <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-testing</artifactId>
-            <version>${dropwizard-version}</version>
+            <version>${dropwizard.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
