@@ -1,4 +1,4 @@
-# Alohomora [![Build Status](https://travis-ci.org/korthout/Alohomora.svg?branch=master)](https://travis-ci.org/korthout/Alohomora) [![Coverage Status](https://coveralls.io/repos/github/korthout/Alohomora/badge.svg?branch=master)](https://coveralls.io/github/korthout/Alohomora?branch=master)
+# Alohomora [![Build Status](https://travis-ci.org/korthout/Alohomora.svg?branch=master)](https://travis-ci.org/korthout/Alohomora) [![Coverage Status](https://coveralls.io/repos/github/korthout/Alohomora/badge.svg?branch=master)](https://coveralls.io/github/korthout/Alohomora?branch=master) [![Code Climate](https://lima.codeclimate.com/github/korthout/Alohomora/badges/gpa.svg)](https://lima.codeclimate.com/github/korthout/Alohomora)
 A simple [Dropwizard](https://github.com/dropwizard/dropwizard) project that I use to learn more about web service development using modern Java.
 
 # Features
