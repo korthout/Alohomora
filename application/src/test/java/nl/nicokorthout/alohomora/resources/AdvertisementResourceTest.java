@@ -37,20 +37,13 @@ import io.dropwizard.auth.Authenticator;
 import io.dropwizard.testing.junit.ResourceTestRule;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.isA;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Unit tests for the Advertisement resource.
- *
- * @author Nico Korthout
- * @version 0.1.0
- * @since 27-12-2015
- */
 public class AdvertisementResourceTest {
 
     private final Authenticator<JsonWebToken,User> authenticator = mock(Authenticator.class);
