@@ -13,11 +13,12 @@ A simple [Dropwizard](https://github.com/dropwizard/dropwizard) project that I u
 
 # Continous integration
 - [Travis-CI](https://travis-ci.org/) facilitates containerized building and testing.
-- [Maven](https://maven.apache.org/) configures builds and provides dependency management.
-- [JUnit](http://junit.org/) for automated unit tests.
+- [Maven](https://maven.apache.org/) manages dependencies and configures builds.
+- [JUnit](http://junit.org/) helps automate unit tests.
 - [Mockito](http://site.mockito.org/) mocks dependencies in unit tests.
 - [JaCoCo](https://github.com/jacoco/jacoco) checks the code coverage.
 - [Coveralls](https://coveralls.io/) publishes the code coverage.
+- [Code Climate](https://codeclimate.com/) evaluates the code quality.
 
 # License
 Apache License Version 2.0
