@@ -6,6 +6,21 @@ A simple [Dropwizard](https://github.com/dropwizard/dropwizard) project that I u
 - Users can login with their credentials.
 - Logged-in providers can create advertisements.
 
+# Structure
+This project is setup using the recommended maven module separation:
+> `project-api` should contain your Representations; `project-client` should use those classes and an HTTP client to implement a full-fledged client for your application, and `project-application` should provide the actual application implementation, including Resources.
+
+I've chosen for the simplyfied naming: `api`, `client` and `application`. However, at the moment application is the only module with actual code. I still want to split api from implementation. The application uses the following package structure.
+
+- `api`: Representations
+- `auth`: Authentication
+- `core`: Domain implementation
+- `db`: Database access
+- `resources`: RESTful API resources
+- `utilities`: I know... I know...
+- `Alohomora`: The application class
+- `AlohomoraConfiguration`: Application configuration
+
 # Some technical choices
 - Data is stored in a MySQL database.
 - Communication to the database is handled via [JDBI](http://jdbi.org/) interfaces.
