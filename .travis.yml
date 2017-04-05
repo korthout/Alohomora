@@ -12,3 +12,8 @@ after_success:
 cache:
   directories:
     - '$HOME/.m2/repository'
+
+addons:
+  code_climate:
+    repo_token:
+      secure: 'XPzNW76claGozxgeq8R9/a0yAJWi9DPkp0pvdNs5UpaGmqgKRAKe6IUlhtfjc7qwyGwhhrfG1Sa5kLL0Cju8d+BL50IxMlsjsUldVSZTMpEa28otrQFMrm+UulEeJzA7S1lFV868Lg96m0Qh+CjK4EDqj6zSynXUTuF3m89pDSSqfjTHNPwgz4dCje6+GAmQsL9+jiQVPTsUqOJQ9wjVlQtNE1b0p+08RiALq2VcpajvWP6VzmZPNEZmWMVJze3cRkhC1V3wNYTf7IdVfVrCFK58eqZ8Z2MmWu9XjPBsx6AFP+rWhOVvCBa5W+iUpe37OqDjN1G9zAApxQlMsmEc301fURs4J8gina+0JJGF9O9RQUEvu/hAtaeREGn4Yy3XxkyFEb0ggHA7NWLb3s3FXxrC1EFU3Qln2CR3/z8hCykIkKx8qDTWfFcCWxH3o+hQxfmTuYHK41mI6666WxATo/Lgk37zECTECc3HKCZR/ro8HECCaanh7RlKyT7SZ0d+ZPID5A4cvzEocLsWiTbQsglvcsEYnm1AcXJAS0yISfWOuEc5+3TQ+wfQKEEbpMAXoLI93Gp2PRJe7NTMC9J7y+fylSVfxMxAUVFkT4C7lQQOUShUzzxsfJI/YUJKTiuj6+28Rm067CDjk2yNV5PZdhcvUpLhcK33gn1bCWZUiKQ='
